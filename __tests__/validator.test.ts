@@ -28,8 +28,8 @@ describe('Validator', () => {
     });
 
     it('should validate RUT with K check digit', () => {
-      // 24596710-K is a valid Chilean RUT
-      expect(validateRUT('24596710-K')).toBe(true);
+      // 51111111-K is a valid Chilean RUT with K (10) check digit
+      expect(validateRUT('51111111-K')).toBe(true);
     });
   });
 

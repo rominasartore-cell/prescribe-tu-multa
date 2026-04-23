@@ -1,6 +1,13 @@
 export function calculatePrescriptionDate(fechaIngreso: Date): Date {
   const prescriptionDate = new Date(fechaIngreso);
-  prescriptionDate.setFullYear(prescriptionDate.getFullYear() + 3);
+  prescriptionDate.setFullYear(fechaIngreso.getFullYear() + 3);
+
+  // Handle leap year edge case (e.g., Feb 29 -> Feb 28 in non-leap years)
+  // If month changed after setFullYear, the day didn't exist in target year
+  if (prescriptionDate.getMonth() !== fechaIngreso.getMonth()) {
+    prescriptionDate.setDate(0);
+  }
+
   return prescriptionDate;
 }
 

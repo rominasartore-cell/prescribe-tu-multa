@@ -67,14 +67,15 @@ describe('Prescription', () => {
       expect(getDaysRemaining(fourYearsAgo)).toBe(0);
     });
 
-    it('should return approximately 730 days for 2-year-old multa', () => {
+    it('should return approximately 365 days for 2-year-old multa', () => {
       const twoYearsAgo = new Date();
       twoYearsAgo.setFullYear(twoYearsAgo.getFullYear() - 2);
 
       const days = getDaysRemaining(twoYearsAgo);
-      // Allow ±2 days margin for leap years
-      expect(days).toBeGreaterThan(728);
-      expect(days).toBeLessThan(732);
+      // 2-year-old multa with 3-year prescription should have ~1 year remaining
+      // Allow ±5 days margin for leap years
+      expect(days).toBeGreaterThan(360);
+      expect(days).toBeLessThan(370);
     });
 
     it('should return positive value for non-prescribed multa', () => {

@@ -1,6 +1,7 @@
 import { ValidationError, ExtractedData } from './types';
 
 function validateCheckDigit(rut: string): boolean {
+  const actualDigit = rut[rut.length - 1].toUpperCase();
   const cleanRut = rut.replace(/\D/g, '');
   if (cleanRut.length < 7) return false;
 
@@ -14,7 +15,6 @@ function validateCheckDigit(rut: string): boolean {
   const remainder = sum % 11;
   const verifier = 11 - remainder;
   const expectedDigit = verifier === 11 ? '0' : verifier === 10 ? 'K' : String(verifier);
-  const actualDigit = cleanRut[cleanRut.length - 1].toUpperCase();
 
   return expectedDigit === actualDigit;
 }
