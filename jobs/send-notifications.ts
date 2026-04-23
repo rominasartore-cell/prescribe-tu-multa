@@ -1,5 +1,5 @@
 import { prisma } from '@/lib/db';
-import { sendMiltaAnalysisEmail } from '@/lib/email';
+import { sendMultaAnalysisEmail } from '@/lib/email';
 import { sendWhatsappMessage } from '@/lib/whatsapp';
 
 const MAX_RETRIES = 3;
@@ -28,7 +28,7 @@ export async function sendNotificationsJob() {
         let success = false;
 
         if (notif.tipo === 'EMAIL') {
-          const result = await sendMiltaAnalysisEmail(
+          const result = await sendMultaAnalysisEmail(
             notif.destinatario,
             'N/A', // Subject variations handled in template
             'N/A',

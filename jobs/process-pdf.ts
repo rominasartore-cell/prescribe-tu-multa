@@ -1,5 +1,5 @@
 import { prisma } from '@/lib/db';
-import { sendMiltaAnalysisEmail } from '@/lib/email';
+import { sendMultaAnalysisEmail } from '@/lib/email';
 import { sendWhatsappNotification } from '@/lib/whatsapp';
 
 export async function processPdfJob(multaId: string) {
@@ -16,7 +16,7 @@ export async function processPdfJob(multaId: string) {
 
     // Send email notification
     if (multa.user.email) {
-      await sendMiltaAnalysisEmail(
+      await sendMultaAnalysisEmail(
         multa.user.email,
         multa.rut,
         multa.patente,

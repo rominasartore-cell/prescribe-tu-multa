@@ -2,7 +2,7 @@ import { Resend } from 'resend';
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
-export async function sendMiltaAnalysisEmail(
+export async function sendMultaAnalysisEmail(
   email: string,
   rut: string,
   patente: string,
@@ -10,7 +10,7 @@ export async function sendMiltaAnalysisEmail(
 ): Promise<boolean> {
   try {
     await resend.emails.send({
-      from: process.env.RESEND_FROM_EMAIL || 'noreply@prescribetumlta.cl',
+      from: process.env.RESEND_FROM_EMAIL || 'noreply@prescribeulmulta.cl',
       to: email,
       subject: '✓ Tu multa ha sido analizada - Prescribe Tu Multa',
       html: `
@@ -40,7 +40,7 @@ export async function sendPaymentConfirmationEmail(
 ): Promise<boolean> {
   try {
     await resend.emails.send({
-      from: process.env.RESEND_FROM_EMAIL || 'noreply@prescribetumlta.cl',
+      from: process.env.RESEND_FROM_EMAIL || 'noreply@prescribeulmulta.cl',
       to: email,
       subject: '💳 Pago recibido - Generando documentos',
       html: `
@@ -65,7 +65,7 @@ export async function sendDocumentsReadyEmail(
 ): Promise<boolean> {
   try {
     await resend.emails.send({
-      from: process.env.RESEND_FROM_EMAIL || 'noreply@prescribetumlta.cl',
+      from: process.env.RESEND_FROM_EMAIL || 'noreply@prescribeulmulta.cl',
       to: email,
       subject: '📄 Tus documentos están listos',
       html: `
