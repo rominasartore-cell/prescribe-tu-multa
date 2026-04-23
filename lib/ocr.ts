@@ -1,6 +1,5 @@
 import { S3Client, PutObjectCommand, GetObjectCommand } from '@aws-sdk/client-s3';
 import { TextractClient, AnalyzeDocumentCommand } from '@aws-sdk/client-textract';
-import { readFile } from 'fs/promises';
 
 const s3Client = new S3Client({ region: process.env.AWS_REGION });
 const textractClient = new TextractClient({ region: process.env.AWS_REGION });
@@ -53,10 +52,11 @@ export async function getPdfFromS3(s3Key: string): Promise<Buffer> {
   });
 
   const response = await s3Client.send(command);
-  const chunks = [];
+  const chunks: Uint8Array[] = [];
 
   if (response.Body) {
-    for await (const chunk of response.Body) {
+    const reader = response.Body as AsyncIterable<Uint8Array>;
+    for await (const chunk of reader) {
       chunks.push(chunk);
     }
   }

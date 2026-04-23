@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { useSession } from 'next-auth/react';
 
 interface Multa {
   id: string;
@@ -20,7 +19,6 @@ interface Multa {
 export default function MultaDetailPage() {
   const params = useParams();
   const router = useRouter();
-  const { data: session } = useSession();
   const [multa, setMulta] = useState<Multa | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');

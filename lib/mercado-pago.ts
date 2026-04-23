@@ -49,7 +49,7 @@ export async function getPaymentInfo(paymentId: number): Promise<MercadoPagoPaym
 }
 
 export async function verifyWebhookSignature(
-  data: Record<string, unknown>,
+  _data: Record<string, unknown>,
   xSignature: string | undefined,
   xRequestId: string | undefined,
 ): Promise<boolean> {

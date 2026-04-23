@@ -22,13 +22,13 @@ export async function POST(request: NextRequest) {
       if (paymentId) {
         const payment = await getPaymentInfo(paymentId);
 
-        if (payment.status === 'approved') {
+        if (payment.status === 'approved' && payment.external_reference) {
           const externalRef = payment.external_reference;
 
           // Parse external reference to get multaId and userId
           const match = externalRef.match(/multa_(.+?)_user_(.+)/);
           if (match) {
-            const [, multaId, userId] = match;
+            const [, multaId] = match;
 
             // Update multa as paid
             await prisma.multa.update({
@@ -56,7 +56,6 @@ export async function POST(request: NextRequest) {
   }
 }
 
-export async function GET(request: NextRequest) {
-  // For webhook verification if needed
+export async function GET() {
   return NextResponse.json({ ok: true });
 }

@@ -57,10 +57,13 @@ export async function POST(request: NextRequest) {
     // Normalize data
     const normalized = normalizeExtraction(extracted);
 
+    // Parse fecha ingreso to Date
+    const fechaIngresoDate = new Date(normalized.fechaIngreso!);
+
     // Calculate prescription
-    const fechaPrescripcion = calculatePrescriptionDate(normalized.fechaIngreso!);
-    const estado = getStatus(normalized.fechaIngreso!);
-    const diasRestantes = getDaysRemaining(normalized.fechaIngreso!);
+    const fechaPrescripcion = calculatePrescriptionDate(fechaIngresoDate);
+    const estado = getStatus(fechaIngresoDate);
+    const diasRestantes = getDaysRemaining(fechaIngresoDate);
 
     // Create multa record
     const multa = await prisma.multa.create({
@@ -70,7 +73,7 @@ export async function POST(request: NextRequest) {
         patente: normalized.patente!,
         monto: normalized.monto!,
         articulo: normalized.articulo,
-        fechaIngreso: normalized.fechaIngreso!,
+        fechaIngreso: fechaIngresoDate,
         fechaPrescripcion,
         estado,
         diasRestantes,

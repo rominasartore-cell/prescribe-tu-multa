@@ -129,33 +129,33 @@ describe('Validator', () => {
 
   describe('validateExtraction', () => {
     it('should return no errors for valid data', () => {
-      const data = {
+      const data: any = {
         rut: '12345678-9',
         patente: 'ABC-1234',
         monto: 450000,
-        fechaIngreso: new Date('2021-01-15'),
+        fechaIngreso: '2021-01-15',
       };
       const errors = validateExtraction(data);
       expect(errors).toHaveLength(0);
     });
 
     it('should identify invalid RUT', () => {
-      const data = {
+      const data: any = {
         rut: 'invalid',
         patente: 'ABC-1234',
         monto: 450000,
-        fechaIngreso: new Date('2021-01-15'),
+        fechaIngreso: '2021-01-15',
       };
       const errors = validateExtraction(data);
       expect(errors.some((e) => e.field === 'rut')).toBe(true);
     });
 
     it('should identify multiple errors', () => {
-      const data = {
+      const data: any = {
         rut: 'invalid',
         patente: 'invalid',
         monto: 0,
-        fechaIngreso: new Date('2099-01-15'),
+        fechaIngreso: '2099-01-15',
       };
       const errors = validateExtraction(data);
       expect(errors.length).toBeGreaterThan(2);
@@ -164,7 +164,7 @@ describe('Validator', () => {
 
   describe('normalizeExtraction', () => {
     it('should uppercase RUT and remove spaces', () => {
-      const data = {
+      const data: any = {
         rut: '12345678 - 9',
         patente: 'abc-1234',
         monto: '450000',

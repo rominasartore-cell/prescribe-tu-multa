@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { useSession } from 'next-auth/react';
 
 interface Multa {
   id: string;
@@ -16,7 +15,6 @@ interface Multa {
 }
 
 export default function DashboardPage() {
-  const { data: session } = useSession();
   const [multas, setMultas] = useState<Multa[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');

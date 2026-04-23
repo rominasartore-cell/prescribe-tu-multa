@@ -52,9 +52,8 @@ export async function GET(request: NextRequest) {
       diasRestantes: multa.diasRestantes || 0,
     });
 
-    return new NextResponse(pdfBuffer, {
+    return new NextResponse(new Blob([new Uint8Array(pdfBuffer)], { type: 'application/pdf' }), {
       headers: {
-        'Content-Type': 'application/pdf',
         'Content-Disposition': `attachment; filename="analisis-multa-${multa.rut}.pdf"`,
       },
     });

@@ -37,8 +37,6 @@ export async function sendMiltaAnalysisEmail(
 
 export async function sendPaymentConfirmationEmail(
   email: string,
-  rut: string,
-  patente: string,
 ): Promise<boolean> {
   try {
     await resend.emails.send({
@@ -64,7 +62,6 @@ export async function sendPaymentConfirmationEmail(
 export async function sendDocumentsReadyEmail(
   email: string,
   downloadUrl: string,
-  rut: string,
 ): Promise<boolean> {
   try {
     await resend.emails.send({

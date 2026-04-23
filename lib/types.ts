@@ -58,6 +58,7 @@ export interface MercadoPagoPayment {
   status: string;
   status_detail: string;
   transaction_amount: number;
+  external_reference?: string;
   payer: {
     email: string;
   };

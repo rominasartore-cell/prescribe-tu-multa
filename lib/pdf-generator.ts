@@ -76,9 +76,8 @@ export function generatePdf(multa: PrescriptionResult): Buffer {
   doc.moveDown(2);
 
   // Footer
-  doc.fontSize(8).text(`Generado por Prescribe Tu Multa - ${new Date().toLocaleDateString('es-CL')}`, {
+  doc.fontSize(8).fillColor('#999999').text(`Generado por Prescribe Tu Multa - ${new Date().toLocaleDateString('es-CL')}`, {
     align: 'center',
-    color: '#999999',
   });
 
   doc.end();

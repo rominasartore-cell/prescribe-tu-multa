@@ -55,9 +55,8 @@ export async function GET(request: NextRequest) {
 
     const buffer = await Packer.toBuffer(doc);
 
-    return new NextResponse(buffer, {
+    return new NextResponse(new Blob([new Uint8Array(buffer)], { type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' }), {
       headers: {
-        'Content-Type': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
         'Content-Disposition': `attachment; filename="escrito-judicial-${multa.rut}.docx"`,
       },
     });

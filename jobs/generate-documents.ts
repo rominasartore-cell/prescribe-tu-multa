@@ -62,7 +62,6 @@ export async function generateDocumentsJob(multaId: string) {
       await sendDocumentsReadyEmail(
         multa.user.email,
         downloadUrl,
-        multa.rut,
       );
     }
 

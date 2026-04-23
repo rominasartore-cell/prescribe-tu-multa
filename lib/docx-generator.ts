@@ -1,4 +1,4 @@
-import { Document, Paragraph, Table, TableCell, TableRow, WidthType, AlignmentType, BorderStyle } from 'docx';
+import { Document, Paragraph, Table, TableCell, TableRow, WidthType, AlignmentType, TextRun } from 'docx';
 import { PrescriptionResult } from './types';
 
 export function generateDocx(multa: PrescriptionResult): Document {
@@ -77,7 +77,7 @@ export function generateDocx(multa: PrescriptionResult): Document {
               new TableRow({
                 children: [
                   new TableCell({
-                    children: [new Paragraph({ text: 'RUT', bold: true })],
+                    children: [new Paragraph({ children: [new TextRun({ text: 'RUT', bold: true })] })],
                     shading: { fill: 'E5E7EB' },
                   }),
                   new TableCell({
@@ -88,7 +88,7 @@ export function generateDocx(multa: PrescriptionResult): Document {
               new TableRow({
                 children: [
                   new TableCell({
-                    children: [new Paragraph({ text: 'Patente', bold: true })],
+                    children: [new Paragraph({ children: [new TextRun({ text: 'Patente', bold: true })] })],
                     shading: { fill: 'E5E7EB' },
                   }),
                   new TableCell({
@@ -99,7 +99,7 @@ export function generateDocx(multa: PrescriptionResult): Document {
               new TableRow({
                 children: [
                   new TableCell({
-                    children: [new Paragraph({ text: 'Monto', bold: true })],
+                    children: [new Paragraph({ children: [new TextRun({ text: 'Monto', bold: true })] })],
                     shading: { fill: 'E5E7EB' },
                   }),
                   new TableCell({
@@ -110,7 +110,7 @@ export function generateDocx(multa: PrescriptionResult): Document {
               new TableRow({
                 children: [
                   new TableCell({
-                    children: [new Paragraph({ text: 'Artículo', bold: true })],
+                    children: [new Paragraph({ children: [new TextRun({ text: 'Artículo', bold: true })] })],
                     shading: { fill: 'E5E7EB' },
                   }),
                   new TableCell({
@@ -121,7 +121,7 @@ export function generateDocx(multa: PrescriptionResult): Document {
               new TableRow({
                 children: [
                   new TableCell({
-                    children: [new Paragraph({ text: 'Fecha Ingreso RMNP', bold: true })],
+                    children: [new Paragraph({ children: [new TextRun({ text: 'Fecha Ingreso RMNP', bold: true })] })],
                     shading: { fill: 'E5E7EB' },
                   }),
                   new TableCell({
@@ -132,7 +132,7 @@ export function generateDocx(multa: PrescriptionResult): Document {
               new TableRow({
                 children: [
                   new TableCell({
-                    children: [new Paragraph({ text: 'Fecha Prescripción', bold: true })],
+                    children: [new Paragraph({ children: [new TextRun({ text: 'Fecha Prescripción', bold: true })] })],
                     shading: { fill: 'E5E7EB' },
                   }),
                   new TableCell({
@@ -167,9 +167,8 @@ export function generateDocx(multa: PrescriptionResult): Document {
 
           // Disclaimer
           new Paragraph({
-            text: '⚠ AVISO IMPORTANTE',
+            children: [new TextRun({ text: '⚠ AVISO IMPORTANTE', bold: true })],
             spacing: { before: 200, after: 100 },
-            bold: true,
           }),
 
           new Paragraph({
@@ -179,11 +178,9 @@ export function generateDocx(multa: PrescriptionResult): Document {
           }),
 
           new Paragraph({
-            text: `Generado el ${new Date().toLocaleDateString('es-CL')} por Prescribe Tu Multa`,
+            children: [new TextRun({ text: `Generado el ${new Date().toLocaleDateString('es-CL')} por Prescribe Tu Multa`, color: '666666', size: 18 })],
             spacing: { before: 200 },
             alignment: AlignmentType.CENTER,
-            color: '666666',
-            size: 18,
           }),
         ],
       },
