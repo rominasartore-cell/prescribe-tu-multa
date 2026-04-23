@@ -1,0 +1,117 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String     @id @default(cuid())
+  email         String     @unique
+  password      String
+  phone         String?
+  rut           String?
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
+
+  multas        Multa[]
+  pagos         Pago[]
+  notificaciones Notificacion[]
+  auditLogs     AuditLog[]
+
+  @@index([email])
+}
+
+model Multa {
+  id                    String     @id @default(cuid())
+  userId                String
+  user                  User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  rut                   String
+  patente               String
+  monto                 Int
+  articulo              String?
+  fechaIngreso          DateTime
+  fechaPrescripcion     DateTime
+  estado                String     // "PRESCRITA" or "VIGENTE"
+  diasRestantes         Int?
+
+  pdfOriginalUrl        String?
+  pdfTextUrl            String?
+  documentoPdfUrl       String?
+  documentoDocxUrl      String?
+
+  pagado                Boolean    @default(false)
+  createdAt             DateTime   @default(now())
+  updatedAt             DateTime   @updatedAt
+
+  pago                  Pago?
+  notificaciones        Notificacion[]
+
+  @@index([userId])
+  @@index([estado])
+  @@index([createdAt])
+  @@index([rut])
+}
+
+model Pago {
+  id                    String     @id @default(cuid())
+  multaId               String     @unique
+  multa                 Multa      @relation(fields: [multaId], references: [id], onDelete: Cascade)
+  userId                String
+  user                  User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  monto                 Int        @default(19990)
+  mercadoPagoId         String?    @unique
+  estado                String     // "PENDIENTE", "PAGADO", "FALLIDO"
+  createdAt             DateTime   @default(now())
+  updatedAt             DateTime   @updatedAt
+
+  @@index([userId])
+  @@index([estado])
+}
+
+model Notificacion {
+  id                    String     @id @default(cuid())
+  multaId               String?
+  multa                 Multa?     @relation(fields: [multaId], references: [id], onDelete: SetNull)
+  userId                String
+  user                  User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  tipo                  String     // "EMAIL", "WHATSAPP", "SMS"
+  destinatario          String
+  asunto                String?
+  mensaje               String
+  estado                String     // "PENDIENTE", "ENVIADO", "FALLIDO"
+  intentos              Int        @default(0)
+  proximoIntento        DateTime?
+  createdAt             DateTime   @default(now())
+  updatedAt             DateTime   @updatedAt
+
+  @@index([userId])
+  @@index([estado])
+  @@index([createdAt])
+}
+
+model AuditLog {
+  id                    String     @id @default(cuid())
+  userId                String?
+  user                  User?      @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  accion                String
+  recurso               String
+  recursoId             String?
+  detalles              String?
+  ipAddress             String?
+  userAgent             String?
+  createdAt             DateTime   @default(now())
+
+  @@index([userId])
+  @@index([createdAt])
+  @@index([accion])
+}
