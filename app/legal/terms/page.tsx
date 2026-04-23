@@ -17,7 +17,7 @@ export default function TermsPage() {
         <div className="bg-white rounded-lg border border-gray-200 p-8 prose max-w-none">
           <h2>1. Naturaleza del Servicio</h2>
           <p>
-            Prescribe Tu Multa ("el Servicio") es una plataforma de legal-tech que proporciona análisis
+            Prescribe Tu Multa (&ldquo;el Servicio&rdquo;) es una plataforma de legal-tech que proporciona análisis
             automatizado de multas de tránsito chilenas. El Servicio NO constituye asesoramiento legal
             profesional.
           </p>
@@ -37,7 +37,7 @@ export default function TermsPage() {
 
           <h2>3. Garantía</h2>
           <p>
-            El Servicio se proporciona "TAL COMO ESTÁ" sin garantías de ningún tipo, expresas o
+            El Servicio se proporciona &ldquo;TAL COMO ESTÁ&rdquo; sin garantías de ningún tipo, expresas o
             implícitas. Ofrecemos reembolso completo si los documentos no son útiles (dentro de 30
             días de compra).
           </p>

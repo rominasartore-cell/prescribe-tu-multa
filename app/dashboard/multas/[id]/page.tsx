@@ -25,25 +25,25 @@ export default function MultaDetailPage() {
   const [checkoutLoading, setCheckoutLoading] = useState(false);
 
   useEffect(() => {
+    async function fetchMulta() {
+      try {
+        const response = await fetch(`/api/multas/${params.id}`);
+        const data = await response.json();
+
+        if (data.success) {
+          setMulta(data.multa);
+        } else {
+          setError(data.error || 'Error al cargar');
+        }
+      } catch (err) {
+        setError('Error de conexión');
+      } finally {
+        setLoading(false);
+      }
+    }
+
     fetchMulta();
   }, [params.id]);
-
-  async function fetchMulta() {
-    try {
-      const response = await fetch(`/api/multas/${params.id}`);
-      const data = await response.json();
-
-      if (data.success) {
-        setMulta(data.multa);
-      } else {
-        setError(data.error || 'Error al cargar');
-      }
-    } catch (err) {
-      setError('Error de conexión');
-    } finally {
-      setLoading(false);
-    }
-  }
 
   async function handleCheckout() {
     if (!multa) return;
