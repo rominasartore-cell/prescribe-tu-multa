@@ -1,20 +1,30 @@
 import axios from 'axios';
 
-const WA_API_URL = `https://graph.instagram.com/v18.0/${process.env.WHATSAPP_PHONE_NUMBER_ID}`;
+function getWhatsappClient() {
+  const phoneNumberId = process.env.WHATSAPP_PHONE_NUMBER_ID;
+  const accessToken = process.env.WHATSAPP_ACCESS_TOKEN;
 
-const waClient = axios.create({
-  baseURL: WA_API_URL,
-  headers: {
-    Authorization: `Bearer ${process.env.WHATSAPP_ACCESS_TOKEN}`,
-    'Content-Type': 'application/json',
-  },
-});
+  if (!phoneNumberId || !accessToken) {
+    throw new Error('WhatsApp environment variables are not set');
+  }
+
+  const WA_API_URL = `https://graph.instagram.com/v18.0/${phoneNumberId}`;
+
+  return axios.create({
+    baseURL: WA_API_URL,
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+      'Content-Type': 'application/json',
+    },
+  });
+}
 
 export async function sendWhatsappMessage(
   phoneNumber: string,
   message: string,
 ): Promise<boolean> {
   try {
+    const waClient = getWhatsappClient();
     const response = await waClient.post('/messages', {
       messaging_product: 'whatsapp',
       recipient_type: 'individual',

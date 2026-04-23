@@ -6,7 +6,7 @@ import { uploadToS3, extractTextFromPDF } from '@/lib/ocr';
 import { extractDataFromText } from '@/lib/ai';
 import { validateExtraction, normalizeExtraction } from '@/lib/validator';
 import { calculatePrescriptionDate, getStatus, getDaysRemaining } from '@/lib/prescription';
-import { sendMiltaAnalysisEmail } from '@/lib/email';
+import { sendMultaAnalysisEmail } from '@/lib/email';
 
 export async function POST(request: NextRequest) {
   try {
@@ -87,7 +87,7 @@ export async function POST(request: NextRequest) {
     });
 
     if (user?.email) {
-      await sendMiltaAnalysisEmail(user.email, normalized.rut!, normalized.patente!, estado);
+      await sendMultaAnalysisEmail(user.email, normalized.rut!, normalized.patente!, estado);
     }
 
     return NextResponse.json({

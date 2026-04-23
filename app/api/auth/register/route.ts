@@ -4,7 +4,7 @@ import { NextRequest, NextResponse } from 'next/server';
 
 export async function POST(request: NextRequest) {
   try {
-    const { email, password, phone } = await request.json();
+    const { email, password } = await request.json();
 
     // Validation
     if (!email || !password) {
@@ -32,7 +32,6 @@ export async function POST(request: NextRequest) {
       data: {
         email,
         password: hashedPassword,
-        phone: phone || null,
       },
     });
 
