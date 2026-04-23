@@ -1,6 +1,11 @@
 import { Resend } from 'resend';
 
-const resend = new Resend(process.env.RESEND_API_KEY);
+function getResendClient() {
+  if (!process.env.RESEND_API_KEY) {
+    throw new Error('RESEND_API_KEY environment variable is not set');
+  }
+  return new Resend(process.env.RESEND_API_KEY);
+}
 
 export async function sendMultaAnalysisEmail(
   email: string,
@@ -9,6 +14,7 @@ export async function sendMultaAnalysisEmail(
   estado: string,
 ): Promise<boolean> {
   try {
+    const resend = getResendClient();
     await resend.emails.send({
       from: process.env.RESEND_FROM_EMAIL || 'noreply@prescribeulmulta.cl',
       to: email,
@@ -39,6 +45,7 @@ export async function sendPaymentConfirmationEmail(
   email: string,
 ): Promise<boolean> {
   try {
+    const resend = getResendClient();
     await resend.emails.send({
       from: process.env.RESEND_FROM_EMAIL || 'noreply@prescribeulmulta.cl',
       to: email,
@@ -64,6 +71,7 @@ export async function sendDocumentsReadyEmail(
   downloadUrl: string,
 ): Promise<boolean> {
   try {
+    const resend = getResendClient();
     await resend.emails.send({
       from: process.env.RESEND_FROM_EMAIL || 'noreply@prescribeulmulta.cl',
       to: email,
