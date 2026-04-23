@@ -86,7 +86,7 @@ export function validateExtraction(data: ExtractedData): ValidationError[] {
 
 export function normalizeExtraction(data: ExtractedData): ExtractedData {
   return {
-    rut: data.rut?.toUpperCase().replace(/[.\s]/g, '').trim(),
+    rut: data.rut?.toUpperCase().replace(/[\.\-\s]/g, '').trim(),
     patente: data.patente?.toUpperCase().replace(/\s/g, '').trim(),
     monto: typeof data.monto === 'string' ? parseInt(data.monto, 10) : data.monto,
     articulo: data.articulo?.trim(),
