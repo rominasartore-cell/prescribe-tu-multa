@@ -4,6 +4,7 @@ import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
 import Link from 'next/link';
+import FormularioAnalisis from './components/FormularioAnalisis';
 
 export default function Home() {
   const { data: session } = useSession();
@@ -53,7 +54,7 @@ export default function Home() {
           </p>
           <div className="flex gap-4 justify-center">
             <Link
-              href="/auth/register"
+              href="#formulario"
               className="bg-secondary text-white px-8 py-3 rounded-lg font-semibold hover:bg-opacity-90"
             >
               Analizar Mi Multa →
@@ -88,6 +89,13 @@ export default function Home() {
               </div>
             ))}
           </div>
+        </div>
+      </section>
+
+      {/* Formulario Principal */}
+      <section id="formulario" className="py-20 bg-white">
+        <div className="max-w-2xl mx-auto px-4">
+          <FormularioAnalisis />
         </div>
       </section>
 
@@ -160,9 +168,12 @@ export default function Home() {
                   <span>Estado (PRESCRITA/VIGENTE)</span>
                 </li>
               </ul>
-              <button className="w-full bg-secondary text-white py-3 rounded-lg font-semibold hover:bg-opacity-90">
+              <Link
+                href="#formulario"
+                className="block text-center w-full bg-secondary text-white py-3 rounded-lg font-semibold hover:bg-opacity-90"
+              >
                 Comenzar
-              </button>
+              </Link>
             </div>
             <div className="bg-white p-8 rounded-lg border-2 border-secondary shadow-lg">
               <div className="bg-secondary text-white px-3 py-1 rounded w-fit text-sm font-semibold mb-4">
@@ -192,9 +203,12 @@ export default function Home() {
                   <span>Envío por email + WhatsApp</span>
                 </li>
               </ul>
-              <button className="w-full bg-secondary text-white py-3 rounded-lg font-semibold hover:bg-opacity-90">
+              <Link
+                href="#formulario"
+                className="block text-center w-full bg-secondary text-white py-3 rounded-lg font-semibold hover:bg-opacity-90"
+              >
                 Desbloquear Documentos
-              </button>
+              </Link>
             </div>
           </div>
         </div>
@@ -246,7 +260,7 @@ export default function Home() {
           <h2 className="text-4xl font-bold mb-6">Descubre si tu multa prescribió</h2>
           <p className="text-xl mb-8 text-gray-100">Análisis gratuito en 30 segundos. Sin compromiso.</p>
           <Link
-            href="/auth/register"
+            href="#formulario"
             className="inline-block bg-secondary text-white px-8 py-3 rounded-lg font-semibold hover:bg-opacity-90"
           >
             Comenzar ahora →
