@@ -1,7 +1,5 @@
 import type { Metadata, Viewport } from 'next';
 import '@/styles/globals.css';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth';
 import { Providers } from './providers';
 
 export const viewport: Viewport = {
@@ -50,19 +48,11 @@ export const metadata: Metadata = {
   },
 };
 
-export default async function RootLayout({
+export default function RootLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  let session = null;
-  try {
-    session = await getServerSession(authOptions);
-  } catch (error) {
-    // Database not connected yet
-    console.log('Database not connected, running without session');
-  }
-
   return (
     <html lang="es">
       <head>
@@ -71,7 +61,7 @@ export default async function RootLayout({
         <meta name="theme-color" content="#059669" />
       </head>
       <body>
-        <Providers session={session}>
+        <Providers session={null}>
           <div className="min-h-screen flex flex-col bg-white">
             {children}
           </div>
