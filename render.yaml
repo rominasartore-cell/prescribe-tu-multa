@@ -15,7 +15,6 @@ services:
         scope: runtime
         value: https://prescribetumulta.onrender.com/
       - key: DATABASE_URL
-        scope: runtime
         value: postgresql://postgres.ezdcwbxyqsbdlyvroixw:ptbt35OuJcNyi9ZB@aws-1-us-west-2.pooler.supabase.com:5432/postgres
 databases:
   - name: prescribetumulta-postgres
