@@ -1,6 +1,6 @@
 services:
   - type: web
-    name: prescribetumulta
+    name: prescribe-tu-multa
     env: node
     plan: starter
     buildCommand: npm install && npx prisma generate && npx prisma db push && npm run build
@@ -13,6 +13,6 @@ services:
         scope: build
       - key: NEXTAUTH_URL
         scope: runtime
-        value: https://prescribetumulta.onrender.com/
+        value: https://prescribe-tu-multa.onrender.com/
       - key: DATABASE_URL
         value: postgresql://postgres.ezdcwbxyqsbdlyvroixw:ptbt35OuJcNyi9ZB@aws-1-us-west-2.pooler.supabase.com:5432/postgres
