@@ -288,7 +288,7 @@ export default function Home() {
             </div>
             <div>
               <h4 className="font-semibold mb-4">Contacto</h4>
-              <p className="text-gray-300 text-sm">support@prescribetumlta.cl</p>
+              <p className="text-gray-300 text-sm">support@prescribeulmulta.cl</p>
             </div>
           </div>
           <div className="border-t border-gray-700 pt-8 text-center text-gray-300 text-sm">

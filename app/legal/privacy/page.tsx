@@ -97,7 +97,7 @@ export default function PrivacyPage() {
           </ul>
           <p>
             Para ejercer estos derechos, contacta a{' '}
-            <strong>privacy@prescribetumlta.cl</strong>
+            <strong>privacy@prescribeulmulta.cl</strong>
           </p>
 
           <h2>6. Cookies y Rastreo</h2>
@@ -122,7 +122,7 @@ export default function PrivacyPage() {
 
           <h2>9. Contacto</h2>
           <p>
-            Preguntas sobre privacidad: <strong>privacy@prescribetumlta.cl</strong>
+            Preguntas sobre privacidad: <strong>privacy@prescribeulmulta.cl</strong>
           </p>
 
           <div className="bg-blue-50 border border-blue-200 p-4 rounded-lg mt-8">
