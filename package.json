@@ -49,14 +49,14 @@
   "devDependencies": {
     "@testing-library/jest-dom": "^6.1.5",
     "@testing-library/react": "^14.2.0",
-    "@types/bcryptjs": "^2.4.2",
+    "@types/bcryptjs": "^2.4.6",
     "@types/node": "^20.11.5",
     "@types/node-cron": "^3.0.11",
     "@types/pdfkit": "^0.12.9",
     "@types/react": "^18.2.48",
     "@types/react-dom": "^18.2.18",
     "esbuild-register": "^3.5.0",
-    "eslint": "^8.56.0",
+    "eslint": "^8.57.1",
     "eslint-config-next": "^14.2.3",
     "vitest": "^1.2.0"
   },
