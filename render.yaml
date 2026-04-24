@@ -1,0 +1,23 @@
+services:
+  - type: web
+    name: prescribe-tu-multa
+    env: node
+    plan: starter
+    buildCommand: npm install && npx prisma db push && npm run build
+    startCommand: npm start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: NEXTAUTH_SECRET
+        value: prescribe-tu-multa-dev-secret-key-minimum-32-chars-1234567890ab
+        scope: build
+      - key: NEXTAUTH_URL
+        scope: runtime
+        value: https://prescribe-tu-multa.onrender.com
+      - key: DATABASE_URL
+        scope: runtime
+databases:
+  - name: prescribe-tu-multa-postgres
+    databaseName: postgres
+    user: postgres
+    plan: starter
