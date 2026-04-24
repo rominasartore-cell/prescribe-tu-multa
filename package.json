@@ -1,6 +1,6 @@
 {
   "name": "prescribe-tu-multa",
-  "version": "1.0.5",
+  "version": "1.0.6",
   "description": "Legal tech platform for Chilean traffic fine prescription analysis",
   "private": true,
   "scripts": {
