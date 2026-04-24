@@ -1,7 +1,5 @@
-import type { Metadata, Viewport } from 'next';
+﻿import type { Metadata, Viewport } from 'next';
 import '@/styles/globals.css';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth';
 import { Providers } from './providers';
 
 export const viewport: Viewport = {
@@ -9,7 +7,10 @@ export const viewport: Viewport = {
   initialScale: 1,
 };
 
-const SITE_URL = process.env.NEXTAUTH_URL || 'https://prescribe-tu-multa.vercel.app';
+const SITE_URL =
+  process.env.NEXT_PUBLIC_SITE_URL ||
+  process.env.NEXTAUTH_URL ||
+  'https://prescribe-tu-multa.vercel.app';
 
 export const metadata: Metadata = {
   title: 'Prescribe Tu Multa | Análisis Legal de Multas de Tránsito en Chile',
@@ -50,28 +51,15 @@ export const metadata: Metadata = {
   },
 };
 
-export default async function RootLayout({
+export default function RootLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  let session = null;
-  try {
-    session = await getServerSession(authOptions);
-  } catch (error) {
-    // Database not connected yet
-    console.log('Database not connected, running without session');
-  }
-
   return (
     <html lang="es">
-      <head>
-        <meta charSet="utf-8" />
-        <link rel="icon" href="/favicon.ico" />
-        <meta name="theme-color" content="#059669" />
-      </head>
       <body>
-        <Providers session={session}>
+        <Providers>
           <div className="min-h-screen flex flex-col bg-white">
             {children}
           </div>
