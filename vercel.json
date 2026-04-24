@@ -2,24 +2,6 @@
   "buildCommand": "npm run build",
   "devCommand": "npm run dev",
   "installCommand": "npm ci",
-  "env": {
-    "DATABASE_URL": "@database_url",
-    "NEXTAUTH_SECRET": "@nextauth_secret",
-    "NEXTAUTH_URL": "@nextauth_url",
-    "AWS_REGION": "@aws_region",
-    "AWS_ACCESS_KEY_ID": "@aws_access_key_id",
-    "AWS_SECRET_ACCESS_KEY": "@aws_secret_access_key",
-    "AWS_S3_BUCKET": "@aws_s3_bucket",
-    "ANTHROPIC_API_KEY": "@anthropic_api_key",
-    "MERCADO_PAGO_ACCESS_TOKEN": "@mercado_pago_access_token",
-    "MERCADO_PAGO_PUBLIC_KEY": "@mercado_pago_public_key",
-    "RESEND_API_KEY": "@resend_api_key",
-    "RESEND_FROM_EMAIL": "@resend_from_email",
-    "WHATSAPP_PHONE_NUMBER_ID": "@whatsapp_phone_number_id",
-    "WHATSAPP_ACCESS_TOKEN": "@whatsapp_access_token",
-    "WHATSAPP_VERIFY_TOKEN": "@whatsapp_verify_token",
-    "CRON_SECRET": "@cron_secret"
-  },
   "headers": [
     {
       "source": "/api/(.*)",
@@ -30,5 +12,8 @@
         }
       ]
     }
-  ]
+  ],
+  "env": {
+    "NODE_ENV": "production"
+  }
 }

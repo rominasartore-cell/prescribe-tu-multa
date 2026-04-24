@@ -23,50 +23,34 @@ Legal-tech platform for analyzing Chilean traffic fines (multas) and determining
 - **Email**: Resend
 - **Messaging**: WhatsApp Business API
 - **Document Generation**: PDFKit (PDF), docx (Word)
-- **Deployment**: Vercel (serverless)
+- **Deployment**: Render (serverless) or Vercel
+
+## Documentation
+
+- **[SETUP.md](./SETUP.md)** - Complete local development and production deployment guide
+- **[DEPLOYMENT.md](./DEPLOYMENT.md)** - Quick deployment instructions for Render
+- **[.env.example](./.env.example)** - Environment variables reference
 
 ## Quick Start
 
-### Prerequisites
+**See [SETUP.md](./SETUP.md) for complete detailed instructions.**
 
-- Node.js 18+
-- PostgreSQL 14+
-- AWS Account (for Textract & S3)
-- Anthropic API key
-- Mercado Pago merchant account
-- Resend account
-
-### Local Setup
+### 30-Second Start
 
 ```bash
-# Clone and install
-git clone <repo>
+git clone https://github.com/rominasartore-cell/prescribe-tu-multa.git
 cd prescribe-tu-multa
 npm install
-
-# Setup environment
 cp .env.example .env.local
-# Edit .env.local with your credentials
-
-# Start database
-docker-compose up -d
-
-# Run migrations
-npx prisma db push
-
-# Seed test data (optional)
-npx prisma db seed
-
-# Start dev server
+# Edit .env.local with DATABASE_URL and NEXTAUTH_SECRET
 npm run dev
 ```
 
 Visit `http://localhost:3000`
 
-### Test Credentials
+### Quick Test
 
-- Email: `test@example.com`
-- Password: `password123`
+- Email: `test@example.com` / Password: `password123` (after seeding)
 
 ## API Endpoints
 
@@ -76,11 +60,14 @@ Visit `http://localhost:3000`
 POST /api/auth/register
 {
   "email": "user@example.com",
-  "password": "securepassword",
-  "phone": "+56912345678"
+  "password": "securepassword"
 }
 
-# NextAuth.js handles /api/auth/[...nextauth]
+POST /api/auth/signin (via NextAuth.js)
+{
+  "email": "user@example.com",
+  "password": "securepassword"
+}
 ```
 
 ### Upload & Analysis
