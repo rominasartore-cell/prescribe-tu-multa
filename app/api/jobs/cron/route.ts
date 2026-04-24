@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { sendNotificationsJob } from '@/jobs/send-notifications';
+import { processSolicitudJob } from '@/jobs/process-solicitud';
+import { getPrisma } from '@/lib/db';
 
 export const dynamic = 'force-dynamic';
 
@@ -24,6 +26,43 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({
         success: true,
         job: 'send-notifications',
+        timestamp: new Date().toISOString(),
+      });
+    }
+
+    if (job === 'process-solicitudes') {
+      const prisma = await getPrisma();
+
+      // Find all pending solicitudes that are ready to process
+      const solicitudes = await prisma.solicitud.findMany({
+        where: {
+          estado: 'PENDIENTE',
+          OR: [
+            { proximoIntento: null },
+            { proximoIntento: { lte: new Date() } },
+          ],
+        },
+        take: 10, // Process max 10 at a time
+      });
+
+      let processed = 0;
+      let failed = 0;
+
+      for (const solicitud of solicitudes) {
+        try {
+          await processSolicitudJob(solicitud.id);
+          processed++;
+        } catch (error) {
+          console.error(`Failed to process solicitud ${solicitud.id}:`, error);
+          failed++;
+        }
+      }
+
+      return NextResponse.json({
+        success: true,
+        job: 'process-solicitudes',
+        processed,
+        failed,
         timestamp: new Date().toISOString(),
       });
     }
