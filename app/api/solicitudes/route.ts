@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getPrisma } from '@/lib/db';
-import { sendSolicitudConfirmationEmail } from '@/lib/email';
+import { sendSolicitudConfirmationEmail, sendInternalNotificationEmail } from '@/lib/email';
 
 export async function POST(request: NextRequest) {
   try {
@@ -58,12 +58,18 @@ export async function POST(request: NextRequest) {
 
     console.log('Solicitud creada:', solicitud.id);
 
-    // Enviar email de confirmación (no bloquea si falla)
+    // Enviar emails (no bloquean si fallan)
     try {
       await sendSolicitudConfirmationEmail(email, nombre);
     } catch (emailError) {
       console.error('Error enviando email de confirmación:', emailError);
-      // No lanzar error, la solicitud fue creada exitosamente
+    }
+
+    // Notificar al equipo de soporte
+    try {
+      await sendInternalNotificationEmail(solicitud.id, nombre, patente, email, telefono);
+    } catch (notificationError) {
+      console.error('Error enviando notificación interna:', notificationError);
     }
 
     // TODO: Enviar notificación por WhatsApp si está configurado

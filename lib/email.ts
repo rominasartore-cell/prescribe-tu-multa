@@ -104,6 +104,41 @@ export async function sendPaymentConfirmationEmail(
   }
 }
 
+export async function sendInternalNotificationEmail(
+  solicitudId: string,
+  nombre: string,
+  patente: string,
+  email: string,
+  telefono: string,
+): Promise<boolean> {
+  try {
+    const resend = getResendClient();
+    const supportEmail = process.env.RESEND_SUPPORT_EMAIL || 'support@prescribeulmulta.cl';
+
+    await resend.emails.send({
+      from: process.env.RESEND_FROM_EMAIL || 'noreply@prescribeulmulta.cl',
+      to: supportEmail,
+      subject: `[NUEVA SOLICITUD] ${nombre} - ${patente}`,
+      html: `
+        <h3>Nueva solicitud recibida</h3>
+        <div style="background: #f0f0f0; padding: 15px; border-radius: 8px; margin: 15px 0;">
+          <p><strong>ID Solicitud:</strong> ${solicitudId}</p>
+          <p><strong>Nombre:</strong> ${nombre}</p>
+          <p><strong>Patente:</strong> ${patente}</p>
+          <p><strong>Email:</strong> <a href="mailto:${email}">${email}</a></p>
+          <p><strong>Teléfono:</strong> ${telefono}</p>
+          <p><strong>Fecha:</strong> ${new Date().toLocaleString('es-CL')}</p>
+        </div>
+        <p>La solicitud está siendo procesada automáticamente. Los resultados se enviarán al cliente en breve.</p>
+      `,
+    });
+    return true;
+  } catch (error) {
+    console.error('Error sending internal notification:', error);
+    return false;
+  }
+}
+
 export async function sendDocumentsReadyEmail(
   email: string,
   downloadUrl: string,
