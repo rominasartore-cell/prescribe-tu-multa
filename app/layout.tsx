@@ -1,8 +1,13 @@
-import type { Metadata } from 'next';
+import type { Metadata, Viewport } from 'next';
 import '@/styles/globals.css';
-import { SessionProvider } from 'next-auth/react';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
+import { Providers } from './providers';
+
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
+};
 
 export const metadata: Metadata = {
   title: 'Prescribe Tu Multa | Análisis Legal de Multas de Tránsito en Chile',
@@ -18,7 +23,6 @@ export const metadata: Metadata = {
     'documentos legales',
   ],
   authors: [{ name: 'Prescribe Tu Multa' }],
-  viewport: 'width=device-width, initial-scale=1',
   openGraph: {
     type: 'website',
     locale: 'es_CL',
@@ -49,7 +53,13 @@ export default async function RootLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const session = await getServerSession(authOptions);
+  let session = null;
+  try {
+    session = await getServerSession(authOptions);
+  } catch (error) {
+    // Database not connected yet
+    console.log('Database not connected, running without session');
+  }
 
   return (
     <html lang="es">
@@ -59,11 +69,11 @@ export default async function RootLayout({
         <meta name="theme-color" content="#059669" />
       </head>
       <body>
-        <SessionProvider session={session}>
+        <Providers session={session}>
           <div className="min-h-screen flex flex-col bg-white">
             {children}
           </div>
-        </SessionProvider>
+        </Providers>
       </body>
     </html>
   );
