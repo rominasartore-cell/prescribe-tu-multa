@@ -31,11 +31,11 @@ export async function POST(request: NextRequest) {
 
     const buffer = Buffer.from(await file.arrayBuffer());
 
-    // Upload to S3
-    const s3Key = await uploadToS3(buffer, file.name);
+    // Upload to Supabase Storage
+    const supabaseKey = await uploadToS3(buffer, file.name);
 
-    // Extract text using AWS Textract
-    const text = await extractTextFromPDF(s3Key);
+    // Extract text using Claude Vision API
+    const text = await extractTextFromPDF(buffer);
 
     if (!text || text.trim().length === 0) {
       return NextResponse.json({ error: 'Could not extract text from PDF' }, { status: 400 });
@@ -79,7 +79,7 @@ export async function POST(request: NextRequest) {
         fechaPrescripcion,
         estado,
         diasRestantes,
-        pdfOriginalUrl: s3Key,
+        pdfOriginalUrl: supabaseKey,
       },
     });
 
