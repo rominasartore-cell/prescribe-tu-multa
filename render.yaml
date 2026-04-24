@@ -16,8 +16,3 @@ services:
         value: https://prescribetumulta.onrender.com/
       - key: DATABASE_URL
         value: postgresql://postgres.ezdcwbxyqsbdlyvroixw:ptbt35OuJcNyi9ZB@aws-1-us-west-2.pooler.supabase.com:5432/postgres
-databases:
-  - name: prescribetumulta-postgres
-    databaseName: postgres
-    user: postgres
-    plan: starter
