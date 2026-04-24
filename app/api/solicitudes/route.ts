@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getPrisma } from '@/lib/db';
+import { sendSolicitudConfirmationEmail } from '@/lib/email';
 
 export async function POST(request: NextRequest) {
   try {
@@ -57,9 +58,16 @@ export async function POST(request: NextRequest) {
 
     console.log('Solicitud creada:', solicitud.id);
 
-    // TODO: Enviar email de confirmación
+    // Enviar email de confirmación (no bloquea si falla)
+    try {
+      await sendSolicitudConfirmationEmail(email, nombre);
+    } catch (emailError) {
+      console.error('Error enviando email de confirmación:', emailError);
+      // No lanzar error, la solicitud fue creada exitosamente
+    }
+
     // TODO: Enviar notificación por WhatsApp si está configurado
-    // TODO: Procesar PDF con AWS Textract + Claude API
+    // TODO: Procesar PDF con AWS Textract + Claude API en background job
 
     return NextResponse.json(
       {

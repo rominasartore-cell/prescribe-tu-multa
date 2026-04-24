@@ -41,6 +41,44 @@ export async function sendMultaAnalysisEmail(
   }
 }
 
+export async function sendSolicitudConfirmationEmail(
+  email: string,
+  nombre: string,
+): Promise<boolean> {
+  try {
+    const resend = getResendClient();
+    await resend.emails.send({
+      from: process.env.RESEND_FROM_EMAIL || 'noreply@prescribeulmulta.cl',
+      to: email,
+      subject: '✓ Hemos recibido tu solicitud - Prescribe Tu Multa',
+      html: `
+        <h2>¡Hemos recibido tu solicitud!</h2>
+        <p>Hola ${nombre},</p>
+        <p>Gracias por utilizar Prescribe Tu Multa. Hemos recibido tu solicitud de análisis de multa de tránsito.</p>
+        <div style="background: #f0f0f0; padding: 20px; border-radius: 8px; margin: 20px 0;">
+          <p><strong>Estado:</strong> <span style="color: #059669; font-weight: bold;">PROCESANDO</span></p>
+          <p style="color: #666; font-size: 14px;">Nuestro equipo está analizando tu certificado RMNP. Dentro de poco recibirás los resultados.</p>
+        </div>
+        <p><strong>¿Qué pasa ahora?</strong></p>
+        <ul style="color: #666;">
+          <li>Nuestro sistema analiza tu PDF con inteligencia artificial</li>
+          <li>Extraemos los datos de tu multa (RUT, patente, monto, fecha)</li>
+          <li>Calculamos si está prescrita según la ley (3 años desde RMNP)</li>
+          <li>Te enviamos los resultados por email</li>
+        </ul>
+        <p style="color: #666; font-size: 14px; margin-top: 20px;">⏱️ Tiempo estimado: 2-5 minutos</p>
+        <hr style="margin-top: 40px; border: none; border-top: 1px solid #ccc;">
+        <p style="color: #999; font-size: 12px;">Si tienes dudas, contáctanos: ${process.env.NEXT_PUBLIC_SUPPORT_EMAIL || 'support@prescribeulmulta.cl'}</p>
+        <p style="color: #999; font-size: 12px;">Prescribe Tu Multa - Tu asistente legal de tránsito</p>
+      `,
+    });
+    return true;
+  } catch (error) {
+    console.error('Error sending solicitud confirmation email:', error);
+    return false;
+  }
+}
+
 export async function sendPaymentConfirmationEmail(
   email: string,
 ): Promise<boolean> {
