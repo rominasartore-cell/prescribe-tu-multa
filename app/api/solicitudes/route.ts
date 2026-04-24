@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { getPrisma } from '@/lib/db';
 
 export async function POST(request: NextRequest) {
   try {
@@ -41,24 +42,30 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Registrar la solicitud en base de datos (simulado por ahora)
-    console.log('Solicitud recibida:', {
-      nombre,
-      patente,
-      email,
-      telefono,
-      timestamp: new Date().toISOString(),
+    // Guardar en base de datos
+    const prisma = await getPrisma();
+    const solicitud = await prisma.solicitud.create({
+      data: {
+        nombre,
+        patente,
+        email,
+        telefono,
+        aceptaTerminos,
+        estado: 'PENDIENTE',
+      },
     });
 
-    // TODO: Guardar en base de datos cuando Prisma esté configurado
+    console.log('Solicitud creada:', solicitud.id);
+
     // TODO: Enviar email de confirmación
     // TODO: Enviar notificación por WhatsApp si está configurado
+    // TODO: Procesar PDF con AWS Textract + Claude API
 
     return NextResponse.json(
       {
         success: true,
         message: 'Solicitud recibida correctamente',
-        id: Math.random().toString(36).substring(7),
+        id: solicitud.id,
       },
       { status: 201 }
     );

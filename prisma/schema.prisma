@@ -115,3 +115,22 @@ model AuditLog {
   @@index([createdAt])
   @@index([accion])
 }
+
+model Solicitud {
+  id                    String     @id @default(cuid())
+  nombre                String
+  patente               String
+  email                 String
+  telefono              String
+  pdfUrl                String?
+  aceptaTerminos        Boolean    @default(true)
+  estado                String     @default("PENDIENTE") // "PENDIENTE", "PROCESADA", "ERROR"
+  intento               Int        @default(0)
+  proximoIntento        DateTime?
+  createdAt             DateTime   @default(now())
+  updatedAt             DateTime   @updatedAt
+
+  @@index([email])
+  @@index([estado])
+  @@index([createdAt])
+}
