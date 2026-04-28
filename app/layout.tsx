@@ -13,6 +13,13 @@ const SITE_URL =
   process.env.NEXTAUTH_URL ||
   'https://prescribetumulta.cl';
 
+// Open Graph Image - Dynamic via ogcdn.net
+// Format: https://ogcdn.net/{templateId}/v{version}/{variable1}/{variable2}/.../og.png
+// All values must be URL encoded. Use "_" for default values.
+const OG_IMAGE_URL =
+  process.env.NEXT_PUBLIC_OG_IMAGE_URL ||
+  'https://ogcdn.net/prescribe-tu-multa/v1/Prescribe%20Tu%20Multa/An%C3%A1lisis%20de%20Multas%20de%20Tr%C3%A1nsito/og.png';
+
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
   title: 'Prescribe Tu Multa | Análisis Legal de Multas de Tránsito en Chile',
@@ -36,7 +43,7 @@ export const metadata: Metadata = {
     description: 'Análisis Legal de Multas de Tránsito en Chile',
     images: [
       {
-        url: `${SITE_URL}/og-image.png`,
+        url: OG_IMAGE_URL,
         width: 1200,
         height: 630,
       },
@@ -46,6 +53,7 @@ export const metadata: Metadata = {
     card: 'summary_large_image',
     title: 'Prescribe Tu Multa',
     description: 'Análisis Legal de Multas de Tránsito en Chile',
+    images: [OG_IMAGE_URL],
   },
   robots: {
     index: true,
