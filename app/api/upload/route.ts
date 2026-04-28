@@ -37,13 +37,47 @@ export async function POST(request: NextRequest) {
     }
 
     const formData = await request.formData();
+console.log('UPLOAD_FORMDATA_KEYS', Array.from(formData.keys()));
 
-    const nombre = String(formData.get('nombre') || '').trim();
-    const patenteRaw = String(formData.get('patente') || '').trim();
-    const email = String(formData.get('email') || '').trim();
-    const telefono = String(formData.get('telefono') || '').trim();
-    const aceptaTerminosValue = String(formData.get('aceptaTerminos') || 'true');
-    const file = formData.get('file') as File | null;
+    const nombre = String(
+  formData.get('nombre') ||
+  formData.get('nombreCompleto') ||
+  formData.get('name') ||
+  ''
+).trim();
+
+const patenteRaw = String(
+  formData.get('patente') ||
+  formData.get('placa') ||
+  ''
+).trim();
+
+const email = String(
+  formData.get('email') ||
+  formData.get('correo') ||
+  ''
+).trim();
+
+const telefono = String(
+  formData.get('telefono') ||
+  formData.get('whatsapp') ||
+  formData.get('phone') ||
+  ''
+).trim();
+
+const aceptaTerminosValue = String(
+  formData.get('aceptaTerminos') ||
+  formData.get('terminos') ||
+  formData.get('terms') ||
+  'true'
+);
+
+const file = (
+  formData.get('file') ||
+  formData.get('certificado') ||
+  formData.get('pdf') ||
+  formData.get('archivo')
+) as File | null;
 
     const aceptaTerminos =
       aceptaTerminosValue === 'true' ||
