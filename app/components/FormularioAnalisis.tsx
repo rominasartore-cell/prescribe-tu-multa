@@ -134,8 +134,17 @@ export default function FormularioAnalisis() {
       formData.append('telefono', form.telefono);
       formData.append('aceptaTerminos', form.aceptaTerminos.toString());
       if (form.archivo) {
-        formData.append('pdf', form.archivo);
+        formData.append('file', form.archivo);
       }
+
+      console.log('[FormularioAnalisis] Enviando FormData:', {
+        nombre: form.nombre,
+        patente: form.patente,
+        email: form.email,
+        telefono: form.telefono,
+        aceptaTerminos: form.aceptaTerminos.toString(),
+        archivo: form.archivo?.name
+      });
 
       const response = await fetch('/api/solicitudes', {
         method: 'POST',
