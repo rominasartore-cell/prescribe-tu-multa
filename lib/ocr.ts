@@ -16,7 +16,7 @@ export async function uploadToSupabase(buffer: Buffer, fileName: string): Promis
   const key = `uploads/${Date.now()}-${fileName}`;
 
   const { error } = await supabase.storage
-    .from('pdfs')
+    .from('certificados')
     .upload(key, buffer, {
       contentType: 'application/pdf',
       upsert: false,
@@ -59,7 +59,7 @@ export async function extractTextFromPDF(pdfBuffer: Buffer): Promise<string> {
 export async function getPdfFromSupabase(supabaseKey: string): Promise<Buffer> {
   const supabase = getSupabaseClient();
   const { data, error } = await supabase.storage
-    .from('pdfs')
+    .from('certificados')
     .download(supabaseKey);
 
   if (error) {
