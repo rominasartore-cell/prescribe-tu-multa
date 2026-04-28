@@ -4,7 +4,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/db';
-import { uploadToS3, extractTextFromPDF } from '@/lib/ocr';
+import { uploadToSupabase, extractTextFromPDF } from '@/lib/ocr';
 import { extractDataFromText } from '@/lib/ai';
 import { validateExtraction, normalizeExtraction } from '@/lib/validator';
 import { calculatePrescriptionDate, getStatus, getDaysRemaining } from '@/lib/prescription';
@@ -32,7 +32,7 @@ export async function POST(request: NextRequest) {
     const buffer = Buffer.from(await file.arrayBuffer());
 
     // Upload to Supabase Storage
-    const supabaseKey = await uploadToS3(buffer, file.name);
+    const supabaseKey = await uploadToSupabase(buffer, file.name);
 
     // Extract text using Claude Vision API
     const text = await extractTextFromPDF(buffer);

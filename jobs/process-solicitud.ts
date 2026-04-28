@@ -1,6 +1,8 @@
 import { getPrisma } from '@/lib/db';
 import { sendMultaAnalysisEmail } from '@/lib/email';
 import { extractTextFromPDF } from '@/lib/ocr';
+import { downloadPdfFromSupabase } from '@/lib/storage';
+import { calculatePrescriptionDate, getStatus, getDaysRemaining } from '@/lib/prescription';
 import { extractDataFromText } from '@/lib/ai';
 
 export async function processSolicitudJob(solicitudId: string) {
@@ -26,9 +28,9 @@ export async function processSolicitudJob(solicitudId: string) {
       return;
     }
 
-    // Extract text from PDF using AWS Textract
-    console.log(`Extracting text from PDF for solicitud ${solicitudId}`);
-    const extractedText = await extractTextFromPDF(solicitud.pdfUrl);
+    console.log(`Downloading and extracting text from PDF for solicitud ${solicitudId}`);
+    const pdfBuffer = await downloadPdfFromSupabase(solicitud.pdfUrl);
+    const extractedText = await extractTextFromPDF(pdfBuffer);
 
     // Analyze with Claude to extract structured data
     console.log(`Analyzing with Claude for solicitud ${solicitudId}`);
@@ -38,17 +40,12 @@ export async function processSolicitudJob(solicitudId: string) {
       throw new Error('Failed to extract required fields from PDF');
     }
 
-    // Calculate prescription date (3 years from intake date)
     const fechaIngreso = typeof analysis.fechaIngreso === 'string'
       ? new Date(analysis.fechaIngreso)
       : analysis.fechaIngreso;
-    const fechaPrescripcion = new Date(fechaIngreso);
-    fechaPrescripcion.setFullYear(fechaPrescripcion.getFullYear() + 3);
-
-    const estado = new Date() > fechaPrescripcion ? 'PRESCRITA' : 'VIGENTE';
-    const diasRestantes = estado === 'VIGENTE'
-      ? Math.ceil((fechaPrescripcion.getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24))
-      : 0;
+    const fechaPrescripcion = calculatePrescriptionDate(fechaIngreso);
+    const estado = getStatus(fechaIngreso);
+    const diasRestantes = getDaysRemaining(fechaIngreso);
 
     // Check if user exists, create if not
     let user = await prisma.user.findUnique({
