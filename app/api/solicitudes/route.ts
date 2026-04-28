@@ -2,155 +2,201 @@ export const dynamic = 'force-dynamic';
 
 import { NextRequest, NextResponse } from 'next/server';
 import { getPrisma } from '@/lib/db';
-import { sendSolicitudConfirmationEmail, sendInternalNotificationEmail } from '@/lib/email';
 import { uploadToSupabase } from '@/lib/ocr';
+import { sendSolicitudConfirmationEmail, sendInternalNotificationEmail } from '@/lib/email';
+
+const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10 MB
+
+function getFieldValue(formData: FormData, ...aliases: string[]): string | null {
+  for (const alias of aliases) {
+    const value = formData.get(alias);
+    if (value !== null && typeof value === 'string') return value;
+  }
+  return null;
+}
+
+function getFileField(formData: FormData, ...aliases: string[]): File | null {
+  for (const alias of aliases) {
+    const file = formData.get(alias);
+    if (file instanceof File) return file;
+  }
+  return null;
+}
 
 export async function POST(request: NextRequest) {
+  const requestId = Math.random().toString(36).substring(7);
+  const logPrefix = `[SOLICITUD:${requestId}]`;
+
   try {
+    console.log(`${logPrefix} Request received`);
     const formData = await request.formData();
 
-    const nombre = formData.get('nombre') as string;
-    const patente = formData.get('patente') as string;
-    const email = formData.get('email') as string;
-    const telefono = formData.get('telefono') as string;
-    const aceptaTerminos = formData.get('aceptaTerminos') === 'true';
-    const pdf = (formData.get('file') || formData.get('pdf')) as File;
-
-    console.log('[Solicitud] Received request - nombre:', nombre, 'patente:', patente, 'email:', email);
-
-    // Validaciones básicas
-    if (!nombre || !patente || !email || !telefono || !aceptaTerminos) {
-      console.warn('[Solicitud] Validation failed: missing required fields');
-      return NextResponse.json(
-        { error: 'Todos los campos son obligatorios' },
-        { status: 400 }
-      );
+    // Debug: log all form fields
+    const allKeys = Array.from(formData.keys());
+    console.log(`${logPrefix} FormData keys:`, allKeys);
+    for (const key of allKeys) {
+      const val = formData.get(key);
+      if (val instanceof File) {
+        console.log(`${logPrefix}   ${key}: File(${val.name}, ${val.size} bytes)`);
+      } else {
+        console.log(`${logPrefix}   ${key}: "${val}"`);
+      }
     }
 
-    if (!pdf) {
-      console.warn('[Solicitud] Validation failed: no PDF file provided');
-      return NextResponse.json(
-        { error: 'Archivo PDF es obligatorio' },
-        { status: 400 }
-      );
+    // Extract fields with aliases support
+    const nombre = getFieldValue(formData, 'nombre', 'nombreCompleto');
+    const patente = getFieldValue(formData, 'patente');
+    const email = getFieldValue(formData, 'email');
+    const telefono = getFieldValue(formData, 'telefono', 'whatsapp');
+    const aceptaTerminosStr = getFieldValue(formData, 'aceptaTerminos');
+    const aceptaTerminos = aceptaTerminosStr === 'true' || aceptaTerminosStr === '1';
+    const file = getFileField(formData, 'file', 'pdf', 'certificado', 'archivo');
+
+    console.log(`${logPrefix} Fields parsed:`, {
+      nombre: !!nombre,
+      patente: !!patente,
+      email: !!email,
+      telefono: !!telefono,
+      aceptaTerminos,
+      file: !!file
+    });
+
+    // Validate required fields
+    const errors: { [key: string]: string } = {};
+
+    if (!nombre || !nombre.trim()) {
+      errors.nombre = 'El nombre es obligatorio';
     }
 
-    console.log(`[Solicitud] PDF received: ${pdf.name} (${pdf.size} bytes, type: ${pdf.type})`);
-
-    if (!pdf.type.includes('pdf')) {
-      console.warn('[Solicitud] Validation failed: invalid file type:', pdf.type);
-      return NextResponse.json(
-        { error: 'El archivo debe ser un PDF válido' },
-        { status: 400 }
-      );
+    if (!patente || !patente.trim()) {
+      errors.patente = 'La patente es obligatoria';
+    } else {
+      const patenteNormalized = patente.toUpperCase().replace(/\s/g, '');
+      if (!/^[A-Z]{2,3}\d{4}$|^[A-Z]{4}\d{2}$/.test(patenteNormalized)) {
+        errors.patente = 'Formato de patente inválido (ej: ABCD12 o AB1234)';
+      }
     }
 
-    // Validar email
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) {
-      console.warn('[Solicitud] Validation failed: invalid email:', email);
-      return NextResponse.json(
-        { error: 'Email inválido' },
-        { status: 400 }
-      );
+    if (!email || !email.trim()) {
+      errors.email = 'El email es obligatorio';
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      errors.email = 'Email inválido';
     }
 
-    // Validar teléfono (formato chileno)
-    const phoneRegex = /^(\+?56)?[\s.-]?(9)?[\s.-]?[0-9]{4}[\s.-]?[0-9]{4}$/;
-    if (!phoneRegex.test(telefono.replace(/\s/g, ''))) {
-      console.warn('[Solicitud] Validation failed: invalid phone:', telefono);
-      return NextResponse.json(
-        { error: 'Teléfono chileno inválido' },
-        { status: 400 }
-      );
+    if (!telefono || !telefono.trim()) {
+      errors.telefono = 'El teléfono es obligatorio';
+    } else if (!/^[\d\s\-\+()]{7,}$/.test(telefono)) {
+      errors.telefono = 'Teléfono inválido';
     }
 
-    // Validar patente
-    const patenteRegex = /^[A-Z]{2,3}-?\d{4}$|^[A-Z]{4}-?\d{2}$/;
-    if (!patenteRegex.test(patente)) {
-      console.warn('[Solicitud] Validation failed: invalid patente:', patente);
-      return NextResponse.json(
-        { error: 'Patente inválida' },
-        { status: 400 }
-      );
+    if (!file) {
+      errors.file = 'El certificado PDF es obligatorio';
+    } else if (file.type !== 'application/pdf') {
+      errors.file = 'El archivo debe ser un PDF válido';
+    } else if (file.size > MAX_FILE_SIZE) {
+      errors.file = `El archivo no debe exceder ${MAX_FILE_SIZE / 1024 / 1024}MB`;
     }
 
-    // Convert File to Buffer for Supabase upload
-    console.log('[Solicitud] Converting PDF to buffer...');
-    const pdfBuffer = Buffer.from(await pdf.arrayBuffer());
+    if (!aceptaTerminos) {
+      errors.aceptaTerminos = 'Debes aceptar los términos';
+    }
 
-    // Upload PDF to Supabase Storage
-    console.log('[Solicitud] Uploading PDF to Supabase Storage...');
-    let pdfKey: string;
+    if (Object.keys(errors).length > 0) {
+      console.log(`${logPrefix} Validation failed:`, errors);
+      return NextResponse.json({ error: 'Validation failed', errors }, { status: 400 });
+    }
+
+    // Convert patente to standard format
+    const patenteNormalized = patente!.toUpperCase().replace(/\s/g, '');
+    const patenteFormatted = /^[A-Z]{4}$/.test(patenteNormalized.substring(0, 4))
+      ? `${patenteNormalized.substring(0, 4)}-${patenteNormalized.substring(4)}`
+      : `${patenteNormalized.substring(0, patenteNormalized.length - 4)}-${patenteNormalized.substring(patenteNormalized.length - 4)}`;
+
+    // Convert file to buffer
+    console.log(`${logPrefix} Converting file to buffer (${file!.size} bytes)`);
+    const pdfBuffer = Buffer.from(await file!.arrayBuffer());
+
+    // Upload to Supabase Storage
+    console.log(`${logPrefix} Uploading PDF to Supabase Storage`);
+    let pdfUrl: string;
     try {
-      pdfKey = await uploadToSupabase(pdfBuffer, pdf.name);
-      console.log('[Solicitud] PDF uploaded successfully:', pdfKey);
+      pdfUrl = await uploadToSupabase(pdfBuffer, file!.name);
+      console.log(`${logPrefix} PDF uploaded: ${pdfUrl}`);
     } catch (uploadError) {
-      console.error('[Solicitud] Failed to upload PDF:', uploadError);
+      console.error(`${logPrefix} Storage upload failed:`, uploadError);
       return NextResponse.json(
-        { error: 'Error al subir el archivo PDF', details: uploadError instanceof Error ? uploadError.message : 'Unknown error' },
+        {
+          error: 'Error al subir el archivo',
+          code: 'STORAGE_UPLOAD_ERROR',
+          message: uploadError instanceof Error ? uploadError.message : 'Unknown error',
+        },
         { status: 500 }
       );
     }
 
-    // Guardar en base de datos
-    console.log('[Solicitud] Creating solicitud in database...');
+    // Save solicitud to database
+    console.log(`${logPrefix} Creating solicitud in database`);
     const prisma = await getPrisma();
     let solicitud: any;
     try {
       solicitud = await prisma.solicitud.create({
         data: {
-          nombre,
-          patente,
-          email,
-          telefono,
+          nombre: nombre!,
+          patente: patenteFormatted,
+          email: email!,
+          telefono: telefono!,
+          pdfUrl,
           aceptaTerminos,
-          pdfUrl: pdfKey,
           estado: 'PENDIENTE',
         },
       });
-      console.log('[Solicitud] Solicitud created successfully:', solicitud.id);
+      console.log(`${logPrefix} Solicitud created: ${solicitud.id}`);
     } catch (dbError) {
-      console.error('[Solicitud] Failed to create solicitud in database:', dbError);
+      console.error(`${logPrefix} Database error:`, dbError);
       return NextResponse.json(
-        { error: 'Error al guardar la solicitud', details: dbError instanceof Error ? dbError.message : 'Unknown error' },
+        {
+          error: 'Error al guardar la solicitud',
+          code: 'DATABASE_ERROR',
+          message: dbError instanceof Error ? dbError.message : 'Unknown error',
+        },
         { status: 500 }
       );
     }
 
-    // Enviar emails (no bloquean si fallan)
+    // Send emails (non-blocking)
     try {
-      await sendSolicitudConfirmationEmail(email, nombre);
-      console.log('[Solicitud] Confirmation email sent to:', email);
+      await sendSolicitudConfirmationEmail(email!, nombre!);
+      console.log(`${logPrefix} Confirmation email sent`);
     } catch (emailError) {
-      console.warn('[Solicitud] Error sending confirmation email:', emailError);
+      console.warn(`${logPrefix} Confirmation email failed:`, emailError);
     }
 
-    // Notificar al equipo de soporte
     try {
-      await sendInternalNotificationEmail(solicitud.id, nombre, patente, email, telefono);
-      console.log('[Solicitud] Internal notification email sent');
-    } catch (notificationError) {
-      console.warn('[Solicitud] Error sending internal notification:', notificationError);
+      await sendInternalNotificationEmail(solicitud.id, nombre!, patenteFormatted, email!, telefono!);
+      console.log(`${logPrefix} Internal notification sent`);
+    } catch (emailError) {
+      console.warn(`${logPrefix} Internal notification failed:`, emailError);
     }
 
-    // TODO: Enviar notificación por WhatsApp si está configurado
-
-    console.log('[Solicitud] Request completed successfully');
+    console.log(`${logPrefix} Request completed successfully`);
     return NextResponse.json(
       {
         success: true,
-        message: 'Solicitud recibida correctamente',
+        message: 'Solicitud recibida correctamente. Procesaremos tu certificado en breve.',
         id: solicitud.id,
+        pdfUrl,
       },
       { status: 201 }
     );
   } catch (error) {
-    console.error('[Solicitud] Unexpected error:', error);
+    console.error(`${logPrefix} Unexpected error:`, error);
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-    const errorStack = error instanceof Error ? error.stack : '';
     return NextResponse.json(
-      { error: 'Error al procesar la solicitud', details: errorMessage, stack: errorStack },
+      {
+        error: 'Error al procesar la solicitud',
+        code: 'INTERNAL_ERROR',
+        message: errorMessage,
+      },
       { status: 500 }
     );
   }

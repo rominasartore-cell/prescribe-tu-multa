@@ -126,7 +126,17 @@ export default function FormularioAnalisis() {
     setLoading(true);
 
     try {
-      // Enviar solicitud con archivo como multipart/form-data
+      console.log('[FormularioAnalisis] Form data before submission:', {
+        nombre: form.nombre,
+        patente: form.patente,
+        email: form.email,
+        telefono: form.telefono,
+        aceptaTerminos: form.aceptaTerminos,
+        archivoName: form.archivo?.name,
+        archivoSize: form.archivo?.size,
+        archivoType: form.archivo?.type,
+      });
+
       const formData = new FormData();
       formData.append('nombre', form.nombre);
       formData.append('patente', form.patente);
@@ -137,14 +147,14 @@ export default function FormularioAnalisis() {
         formData.append('file', form.archivo);
       }
 
-      console.log('[FormularioAnalisis] Enviando FormData:', {
-        nombre: form.nombre,
-        patente: form.patente,
-        email: form.email,
-        telefono: form.telefono,
-        aceptaTerminos: form.aceptaTerminos.toString(),
-        archivo: form.archivo?.name
-      });
+      console.log('[FormularioAnalisis] FormData entries:');
+      for (const [key, value] of formData.entries()) {
+        if (value instanceof File) {
+          console.log(`  ${key}: File(${value.name}, ${value.size} bytes, ${value.type})`);
+        } else {
+          console.log(`  ${key}: "${value}"`);
+        }
+      }
 
       const response = await fetch('/api/solicitudes', {
         method: 'POST',
@@ -153,15 +163,20 @@ export default function FormularioAnalisis() {
 
       const data = await response.json();
 
+      console.log('[FormularioAnalisis] Server response:', data);
+
       if (!response.ok) {
-        setErrors({ submit: data.error || 'Error al procesar la solicitud' });
+        const errorMsg = data.errors
+          ? Object.values(data.errors).join(', ')
+          : data.error || 'Error al procesar la solicitud';
+        setErrors({ submit: errorMsg });
         setLoading(false);
         return;
       }
 
       setEnviado(true);
     } catch (error) {
-      console.error('Error:', error);
+      console.error('[FormularioAnalisis] Error:', error);
       setErrors({ submit: 'Error de conexión. Intenta de nuevo.' });
       setLoading(false);
     }

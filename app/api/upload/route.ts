@@ -1,169 +1,242 @@
 export const dynamic = 'force-dynamic';
 
 import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth';
-import { prisma } from '@/lib/db';
-import { uploadToS3, extractTextFromPDF } from '@/lib/ocr';
-import { extractDataFromText } from '@/lib/ai';
-import { validateExtraction, normalizeExtraction } from '@/lib/validator';
-import { calculatePrescriptionDate, getStatus, getDaysRemaining } from '@/lib/prescription';
-import { sendMultaAnalysisEmail } from '@/lib/email';
+import { createClient } from '@supabase/supabase-js';
+import { getPrisma } from '@/lib/db';
+
+const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10 MB
+const BUCKET_NAME = 'certificados';
+
+function normalizePatente(value: string) {
+  const cleaned = value.toUpperCase().replace(/[^A-Z0-9]/g, '');
+
+  const oldFormat = cleaned.match(/^([A-Z]{2})(\d{4})$/);
+  if (oldFormat) return `${oldFormat[1]}-${oldFormat[2]}`;
+
+  const newFormat = cleaned.match(/^([A-Z]{4})(\d{2})$/);
+  if (newFormat) return `${newFormat[1]}-${newFormat[2]}`;
+
+  return value.toUpperCase().trim();
+}
 
 export async function POST(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
+    const supabaseUrl =
+      process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL;
 
-    if (!session || !session.user?.id) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+    if (!supabaseUrl || !supabaseServiceKey) {
+      return NextResponse.json(
+        {
+          error: 'STORAGE_CONFIG_ERROR',
+          message: 'Faltan variables de Supabase Storage',
+        },
+        { status: 500 },
+      );
     }
 
     const formData = await request.formData();
-    const file = formData.get('file') as File;
+console.log('UPLOAD_FORMDATA_KEYS', Array.from(formData.keys()));
 
-    if (!file) {
-      return NextResponse.json({ error: 'No file provided' }, { status: 400 });
-    }
+    const nombre = String(
+  formData.get('nombre') ||
+  formData.get('nombreCompleto') ||
+  formData.get('name') ||
+  ''
+).trim();
 
-    if (file.type !== 'application/pdf') {
-      return NextResponse.json({ error: 'Only PDF files allowed' }, { status: 400 });
-    }
+const patenteRaw = String(
+  formData.get('patente') ||
+  formData.get('placa') ||
+  ''
+).trim();
 
-    console.log(`[Upload] User ${session.user.id} uploading file: ${file.name} (${file.size} bytes)`);
+const email = String(
+  formData.get('email') ||
+  formData.get('correo') ||
+  ''
+).trim();
 
-    const buffer = Buffer.from(await file.arrayBuffer());
+const telefono = String(
+  formData.get('telefono') ||
+  formData.get('whatsapp') ||
+  formData.get('phone') ||
+  ''
+).trim();
 
-    // Upload to Supabase Storage
-    console.log(`[Upload] Uploading to Supabase Storage...`);
-    let supabaseKey: string;
-    try {
-      supabaseKey = await uploadToS3(buffer, file.name);
-      console.log(`[Upload] File uploaded successfully: ${supabaseKey}`);
-    } catch (uploadError) {
-      console.error('[Upload] Supabase upload failed:', uploadError);
-      return NextResponse.json(
-        { error: 'Failed to upload file to storage', details: uploadError instanceof Error ? uploadError.message : 'Unknown error' },
-        { status: 500 },
-      );
-    }
+const aceptaTerminosValue = String(
+  formData.get('aceptaTerminos') ||
+  formData.get('terminos') ||
+  formData.get('terms') ||
+  'true'
+);
 
-    // Extract text using pdf-parse
-    console.log(`[Upload] Extracting text from PDF...`);
-    let text: string;
-    try {
-      text = await extractTextFromPDF(buffer);
-      if (!text || text.trim().length === 0) {
-        console.warn('[Upload] No text extracted from PDF');
-        return NextResponse.json({ error: 'Could not extract text from PDF' }, { status: 400 });
-      }
-      console.log(`[Upload] Text extracted successfully (${text.length} chars)`);
-    } catch (extractError) {
-      console.error('[Upload] Text extraction failed:', extractError);
-      return NextResponse.json(
-        { error: 'Failed to extract text from PDF', details: extractError instanceof Error ? extractError.message : 'Unknown error' },
-        { status: 500 },
-      );
-    }
+const file = (
+  formData.get('file') ||
+  formData.get('certificado') ||
+  formData.get('pdf') ||
+  formData.get('archivo')
+) as File | null;
 
-    // Extract data using Claude AI
-    console.log(`[Upload] Analyzing with Claude AI...`);
-    let extracted: any;
-    try {
-      extracted = await extractDataFromText(text);
-      console.log('[Upload] Claude analysis completed');
-    } catch (aiError) {
-      console.error('[Upload] Claude AI analysis failed:', aiError);
-      return NextResponse.json(
-        { error: 'Failed to analyze PDF', details: aiError instanceof Error ? aiError.message : 'Unknown error' },
-        { status: 500 },
-      );
-    }
+    const aceptaTerminos =
+      aceptaTerminosValue === 'true' ||
+      aceptaTerminosValue === 'on' ||
+      aceptaTerminosValue === '1';
 
-    // Validate extraction
-    const errors = validateExtraction(extracted);
-    if (errors.length > 0) {
-      console.warn('[Upload] Validation failed:', errors);
+    const patente = normalizePatente(patenteRaw);
+
+    // Detailed logging for debugging
+    console.log('UPLOAD_VALIDATION', {
+      nombre: { value: nombre, isEmpty: !nombre },
+      patenteRaw: { value: patenteRaw, isEmpty: !patenteRaw },
+      patente: { value: patente, isEmpty: !patente },
+      email: { value: email, isEmpty: !email },
+      telefono: { value: telefono, isEmpty: !telefono },
+      file: { name: file?.name, size: file?.size, isEmpty: !file },
+      aceptaTerminos: { value: aceptaTerminos }
+    });
+
+    if (!nombre || !patente || !email || !telefono || !file) {
+      const missingFields = [];
+      if (!nombre) missingFields.push('nombre');
+      if (!patente) missingFields.push('patente');
+      if (!email) missingFields.push('email');
+      if (!telefono) missingFields.push('telefono');
+      if (!file) missingFields.push('file');
+
+      console.log('UPLOAD_MISSING_FIELDS', missingFields);
+
       return NextResponse.json(
         {
-          error: 'Validation failed',
-          details: errors,
+          error: 'Todos los campos son obligatorios',
+          missing: missingFields,
+          received: {
+            nombre: nombre || null,
+            patente: patente || null,
+            email: email || null,
+            telefono: telefono || null,
+            file: file?.name || null
+          }
         },
         { status: 400 },
       );
     }
 
-    // Normalize data
-    const normalized = normalizeExtraction(extracted);
-    console.log('[Upload] Data normalized successfully');
-
-    // Parse fecha ingreso to Date
-    const fechaIngresoDate = new Date(normalized.fechaIngreso!);
-
-    // Calculate prescription
-    const fechaPrescripcion = calculatePrescriptionDate(fechaIngresoDate);
-    const estado = getStatus(fechaIngresoDate);
-    const diasRestantes = getDaysRemaining(fechaIngresoDate);
-
-    // Create multa record
-    console.log(`[Upload] Creating Multa record for user ${session.user.id}...`);
-    let multa: any;
-    try {
-      multa = await prisma.multa.create({
-        data: {
-          userId: session.user.id,
-          rut: normalized.rut!,
-          patente: normalized.patente!,
-          monto: normalized.monto!,
-          articulo: normalized.articulo,
-          fechaIngreso: fechaIngresoDate,
-          fechaPrescripcion,
-          estado,
-          diasRestantes,
-          pdfOriginalUrl: supabaseKey,
-        },
-      });
-      console.log(`[Upload] Multa created successfully: ${multa.id}`);
-    } catch (dbError) {
-      console.error('[Upload] Database creation failed:', dbError);
+    if (!aceptaTerminos) {
       return NextResponse.json(
-        { error: 'Failed to save multa to database', details: dbError instanceof Error ? dbError.message : 'Unknown error' },
+        { error: 'Debes aceptar los términos y condiciones' },
+        { status: 400 },
+      );
+    }
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      return NextResponse.json({ error: 'Email inválido' }, { status: 400 });
+    }
+
+    const phoneRegex = /^(\+?56)?[\s.-]?(9)?[\s.-]?[0-9]{4}[\s.-]?[0-9]{4}$/;
+    if (!phoneRegex.test(telefono.replace(/\s/g, ''))) {
+      return NextResponse.json(
+        { error: 'Teléfono chileno inválido' },
+        { status: 400 },
+      );
+    }
+
+    const patenteRegex = /^[A-Z]{2,3}-?\d{4}$|^[A-Z]{4}-?\d{2}$/;
+    if (!patenteRegex.test(patente)) {
+      return NextResponse.json({ error: 'Patente inválida' }, { status: 400 });
+    }
+
+    if (file.type !== 'application/pdf') {
+      return NextResponse.json(
+        { error: 'Solo se permiten archivos PDF' },
+        { status: 400 },
+      );
+    }
+
+    if (file.size > MAX_FILE_SIZE) {
+      return NextResponse.json(
+        { error: 'El archivo no puede superar los 10 MB' },
+        { status: 400 },
+      );
+    }
+
+    const supabase = createClient(supabaseUrl, supabaseServiceKey, {
+      auth: {
+        persistSession: false,
+      },
+    });
+
+    const safePatente = patente.replace(/[^A-Z0-9-]/g, '');
+    const timestamp = Date.now();
+    const filePath = `${safePatente}/${timestamp}-${file.name.replace(/\s+/g, '-')}`;
+
+    const arrayBuffer = await file.arrayBuffer();
+    const buffer = Buffer.from(arrayBuffer);
+
+    const { error: uploadError } = await supabase.storage
+      .from(BUCKET_NAME)
+      .upload(filePath, buffer, {
+        contentType: 'application/pdf',
+        upsert: false,
+      });
+
+    if (uploadError) {
+      console.error('UPLOAD_STORAGE_ERROR', uploadError);
+      return NextResponse.json(
+        {
+          error: 'UPLOAD_STORAGE_ERROR',
+          message: uploadError.message,
+        },
         { status: 500 },
       );
     }
 
-    // Send email notification
-    const user = await prisma.user.findUnique({
-      where: { id: session.user.id },
-    });
+    const pdfUrl = `${BUCKET_NAME}/${filePath}`;
 
-    if (user?.email) {
-      try {
-        await sendMultaAnalysisEmail(user.email, normalized.rut!, normalized.patente!, estado);
-        console.log(`[Upload] Email sent to ${user.email}`);
-      } catch (emailError) {
-        console.warn('[Upload] Email sending failed:', emailError);
-        // Don't fail the upload if email fails
-      }
-    }
+    const prisma = await getPrisma();
 
-    console.log(`[Upload] Upload process completed successfully for user ${session.user.id}`);
-    return NextResponse.json({
-      success: true,
-      multa: {
-        id: multa.id,
-        rut: multa.rut,
-        patente: multa.patente,
-        monto: multa.monto,
-        estado: multa.estado,
-        diasRestantes: multa.diasRestantes,
+    const solicitud = await prisma.solicitud.create({
+      data: {
+        nombre,
+        patente,
+        email,
+        telefono,
+        pdfUrl,
+        aceptaTerminos,
+        estado: 'PENDIENTE',
       },
     });
-  } catch (error) {
-    console.error('[Upload] Unexpected error:', error);
-    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-    const errorStack = error instanceof Error ? error.stack : '';
+
     return NextResponse.json(
-      { error: 'Internal server error', details: errorMessage, stack: errorStack },
+      {
+        success: true,
+        message: 'Certificado recibido correctamente',
+        solicitudId: solicitud.id,
+        pdfUrl,
+      },
+      { status: 201 },
+    );
+  } catch (error: unknown) {
+    const err = error as any;
+
+    console.error('UPLOAD_ERROR', {
+      name: err?.name,
+      message: err?.message,
+      code: err?.code,
+      meta: err?.meta,
+      stack: err?.stack,
+    });
+
+    return NextResponse.json(
+      {
+        error: 'UPLOAD_ERROR',
+        name: err?.name ?? 'UnknownError',
+        message: err?.message ?? String(error),
+        code: err?.code ?? null,
+        meta: err?.meta ?? null,
+      },
       { status: 500 },
     );
   }

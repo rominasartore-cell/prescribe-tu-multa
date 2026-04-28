@@ -1,19 +1,4 @@
 {
-  "buildCommand": "npm run build",
-  "devCommand": "npm run dev",
-  "installCommand": "npm ci",
-  "headers": [
-    {
-      "source": "/api/(.*)",
-      "headers": [
-        {
-          "key": "Cache-Control",
-          "value": "public, max-age=0, must-revalidate"
-        }
-      ]
-    }
-  ],
-  "env": {
-    "NODE_ENV": "production"
-  }
+  "installCommand": "npm ci --include=dev",
+  "buildCommand": "npm run build"
 }
