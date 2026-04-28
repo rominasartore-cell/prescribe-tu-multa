@@ -5,14 +5,16 @@ import { Providers } from './providers';
 export const viewport: Viewport = {
   width: 'device-width',
   initialScale: 1,
+  colorScheme: 'light',
 };
 
 const SITE_URL =
   process.env.NEXT_PUBLIC_SITE_URL ||
   process.env.NEXTAUTH_URL ||
-  'https://prescribe-tu-multa.vercel.app';
+  'https://prescribetumulta.cl';
 
 export const metadata: Metadata = {
+  metadataBase: new URL(SITE_URL),
   title: 'Prescribe Tu Multa | Análisis Legal de Multas de Tránsito en Chile',
   description:
     'Plataforma legal-tech que analiza multas de tránsito chilenas, determina su estado de prescripción y genera documentos legales automáticamente.',
