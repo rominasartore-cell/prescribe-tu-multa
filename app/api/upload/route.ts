@@ -1,243 +1,122 @@
 export const dynamic = 'force-dynamic';
 
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/lib/auth';
 import { getPrisma } from '@/lib/db';
+import { uploadToSupabase } from '@/lib/ocr';
 
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10 MB
-const BUCKET_NAME = 'certificados';
-
-function normalizePatente(value: string) {
-  const cleaned = value.toUpperCase().replace(/[^A-Z0-9]/g, '');
-
-  const oldFormat = cleaned.match(/^([A-Z]{2})(\d{4})$/);
-  if (oldFormat) return `${oldFormat[1]}-${oldFormat[2]}`;
-
-  const newFormat = cleaned.match(/^([A-Z]{4})(\d{2})$/);
-  if (newFormat) return `${newFormat[1]}-${newFormat[2]}`;
-
-  return value.toUpperCase().trim();
-}
 
 export async function POST(request: NextRequest) {
   try {
-    const supabaseUrl =
-      process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL;
+    // Require authentication for dashboard upload
+    const session = await getServerSession(authOptions);
 
-    const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-
-    if (!supabaseUrl || !supabaseServiceKey) {
+    if (!session?.user?.id) {
       return NextResponse.json(
-        {
-          error: 'STORAGE_CONFIG_ERROR',
-          message: 'Faltan variables de Supabase Storage',
-        },
-        { status: 500 },
+        { error: 'Unauthorized - Please log in' },
+        { status: 401 }
       );
     }
 
     const formData = await request.formData();
-console.log('UPLOAD_FORMDATA_KEYS', Array.from(formData.keys()));
+    const file = formData.get('file') as File | null;
 
-    const nombre = String(
-  formData.get('nombre') ||
-  formData.get('nombreCompleto') ||
-  formData.get('name') ||
-  ''
-).trim();
+    console.log(`[Upload] User ${session.user.id} uploading file`);
 
-const patenteRaw = String(
-  formData.get('patente') ||
-  formData.get('placa') ||
-  ''
-).trim();
-
-const email = String(
-  formData.get('email') ||
-  formData.get('correo') ||
-  ''
-).trim();
-
-const telefono = String(
-  formData.get('telefono') ||
-  formData.get('whatsapp') ||
-  formData.get('phone') ||
-  ''
-).trim();
-
-const aceptaTerminosValue = String(
-  formData.get('aceptaTerminos') ||
-  formData.get('terminos') ||
-  formData.get('terms') ||
-  'true'
-);
-
-const file = (
-  formData.get('file') ||
-  formData.get('certificado') ||
-  formData.get('pdf') ||
-  formData.get('archivo')
-) as File | null;
-
-    const aceptaTerminos =
-      aceptaTerminosValue === 'true' ||
-      aceptaTerminosValue === 'on' ||
-      aceptaTerminosValue === '1';
-
-    const patente = normalizePatente(patenteRaw);
-
-    // Detailed logging for debugging
-    console.log('UPLOAD_VALIDATION', {
-      nombre: { value: nombre, isEmpty: !nombre },
-      patenteRaw: { value: patenteRaw, isEmpty: !patenteRaw },
-      patente: { value: patente, isEmpty: !patente },
-      email: { value: email, isEmpty: !email },
-      telefono: { value: telefono, isEmpty: !telefono },
-      file: { name: file?.name, size: file?.size, isEmpty: !file },
-      aceptaTerminos: { value: aceptaTerminos }
-    });
-
-    if (!nombre || !patente || !email || !telefono || !file) {
-      const missingFields = [];
-      if (!nombre) missingFields.push('nombre');
-      if (!patente) missingFields.push('patente');
-      if (!email) missingFields.push('email');
-      if (!telefono) missingFields.push('telefono');
-      if (!file) missingFields.push('file');
-
-      console.log('UPLOAD_MISSING_FIELDS', missingFields);
-
+    // Validate file
+    if (!file) {
       return NextResponse.json(
-        {
-          error: 'Todos los campos son obligatorios',
-          missing: missingFields,
-          received: {
-            nombre: nombre || null,
-            patente: patente || null,
-            email: email || null,
-            telefono: telefono || null,
-            file: file?.name || null
-          }
-        },
-        { status: 400 },
+        { error: 'El archivo PDF es obligatorio' },
+        { status: 400 }
       );
-    }
-
-    if (!aceptaTerminos) {
-      return NextResponse.json(
-        { error: 'Debes aceptar los términos y condiciones' },
-        { status: 400 },
-      );
-    }
-
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) {
-      return NextResponse.json({ error: 'Email inválido' }, { status: 400 });
-    }
-
-    const phoneRegex = /^(\+?56)?[\s.-]?(9)?[\s.-]?[0-9]{4}[\s.-]?[0-9]{4}$/;
-    if (!phoneRegex.test(telefono.replace(/\s/g, ''))) {
-      return NextResponse.json(
-        { error: 'Teléfono chileno inválido' },
-        { status: 400 },
-      );
-    }
-
-    const patenteRegex = /^[A-Z]{2,3}-?\d{4}$|^[A-Z]{4}-?\d{2}$/;
-    if (!patenteRegex.test(patente)) {
-      return NextResponse.json({ error: 'Patente inválida' }, { status: 400 });
     }
 
     if (file.type !== 'application/pdf') {
       return NextResponse.json(
         { error: 'Solo se permiten archivos PDF' },
-        { status: 400 },
+        { status: 400 }
       );
     }
 
     if (file.size > MAX_FILE_SIZE) {
       return NextResponse.json(
-        { error: 'El archivo no puede superar los 10 MB' },
-        { status: 400 },
+        { error: `El archivo no puede superar ${MAX_FILE_SIZE / 1024 / 1024}MB` },
+        { status: 400 }
       );
     }
 
-    const supabase = createClient(supabaseUrl, supabaseServiceKey, {
-      auth: {
-        persistSession: false,
-      },
-    });
+    console.log(`[Upload] File validated: ${file.name} (${file.size} bytes)`);
 
-    const safePatente = patente.replace(/[^A-Z0-9-]/g, '');
-    const timestamp = Date.now();
-    const filePath = `${safePatente}/${timestamp}-${file.name.replace(/\s+/g, '-')}`;
+    // Convert file to buffer
+    const pdfBuffer = Buffer.from(await file.arrayBuffer());
 
-    const arrayBuffer = await file.arrayBuffer();
-    const buffer = Buffer.from(arrayBuffer);
-
-    const { error: uploadError } = await supabase.storage
-      .from(BUCKET_NAME)
-      .upload(filePath, buffer, {
-        contentType: 'application/pdf',
-        upsert: false,
-      });
-
-    if (uploadError) {
-      console.error('UPLOAD_STORAGE_ERROR', uploadError);
+    // Upload to Supabase Storage
+    console.log(`[Upload] Uploading to Supabase...`);
+    let pdfUrl: string;
+    try {
+      pdfUrl = await uploadToSupabase(pdfBuffer, file.name);
+      console.log(`[Upload] File uploaded: ${pdfUrl}`);
+    } catch (uploadError) {
+      console.error('[Upload] Supabase upload failed:', uploadError);
       return NextResponse.json(
         {
-          error: 'UPLOAD_STORAGE_ERROR',
-          message: uploadError.message,
+          error: 'Error al subir el archivo',
+          details: uploadError instanceof Error ? uploadError.message : 'Unknown error'
         },
-        { status: 500 },
+        { status: 500 }
       );
     }
 
-    const pdfUrl = `${BUCKET_NAME}/${filePath}`;
-
+    // Create solicitud record for dashboard user upload
+    // This will be processed by background job to extract data and create multa
     const prisma = await getPrisma();
 
-    const solicitud = await prisma.solicitud.create({
-      data: {
-        nombre,
-        patente,
-        email,
-        telefono,
-        pdfUrl,
-        aceptaTerminos,
-        estado: 'PENDIENTE',
-      },
-    });
+    console.log(`[Upload] Creating solicitud record...`);
+    let solicitud: any;
+    try {
+      solicitud = await prisma.solicitud.create({
+        data: {
+          nombre: session.user.name || 'Dashboard User',
+          patente: 'PENDIENTE', // Will be extracted from PDF
+          email: session.user.email || '',
+          telefono: '', // Will be extracted from PDF if available
+          pdfUrl,
+          aceptaTerminos: true,
+          estado: 'PENDIENTE',
+        },
+      });
+      console.log(`[Upload] Solicitud created: ${solicitud.id}`);
+    } catch (dbError) {
+      console.error('[Upload] Database error:', dbError);
+      return NextResponse.json(
+        {
+          error: 'Error al guardar la solicitud',
+          details: dbError instanceof Error ? dbError.message : 'Unknown error'
+        },
+        { status: 500 }
+      );
+    }
 
     return NextResponse.json(
       {
         success: true,
-        message: 'Certificado recibido correctamente',
-        solicitudId: solicitud.id,
+        message: 'Archivo recibido. Analizando...',
+        id: solicitud.id,
         pdfUrl,
       },
-      { status: 201 },
+      { status: 201 }
     );
   } catch (error: unknown) {
-    const err = error as any;
-
-    console.error('UPLOAD_ERROR', {
-      name: err?.name,
-      message: err?.message,
-      code: err?.code,
-      meta: err?.meta,
-      stack: err?.stack,
-    });
-
+    console.error('[Upload] Unexpected error:', error);
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
     return NextResponse.json(
       {
-        error: 'UPLOAD_ERROR',
-        name: err?.name ?? 'UnknownError',
-        message: err?.message ?? String(error),
-        code: err?.code ?? null,
-        meta: err?.meta ?? null,
+        error: 'Error al procesar el archivo',
+        details: errorMessage,
       },
-      { status: 500 },
+      { status: 500 }
     );
   }
 }
