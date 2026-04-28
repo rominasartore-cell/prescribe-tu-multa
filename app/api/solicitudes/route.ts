@@ -1,3 +1,5 @@
+export const dynamic = 'force-dynamic';
+
 import { NextRequest, NextResponse } from 'next/server';
 import { getPrisma } from '@/lib/db';
 import { sendSolicitudConfirmationEmail, sendInternalNotificationEmail } from '@/lib/email';
@@ -12,7 +14,7 @@ export async function POST(request: NextRequest) {
     const email = formData.get('email') as string;
     const telefono = formData.get('telefono') as string;
     const aceptaTerminos = formData.get('aceptaTerminos') === 'true';
-    const pdf = formData.get('pdf') as File;
+    const pdf = (formData.get('file') || formData.get('pdf')) as File;
 
     console.log('[Solicitud] Received request - nombre:', nombre, 'patente:', patente, 'email:', email);
 
