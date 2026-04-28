@@ -6,53 +6,52 @@ generator client {
 }
 
 datasource db {
-  provider  = "postgresql"
-  url       = env("DATABASE_URL")
-  directUrl = env("DIRECT_URL")
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
 }
 
 model User {
-  id            String     @id @default(cuid())
-  email         String     @unique
-  password      String
-  phone         String?
-  rut           String?
-  createdAt     DateTime   @default(now())
-  updatedAt     DateTime   @updatedAt
+  id        String   @id @default(cuid())
+  email     String   @unique
+  password  String
+  phone     String?
+  rut       String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-  multas        Multa[]
-  pagos         Pago[]
+  multas         Multa[]
+  pagos          Pago[]
   notificaciones Notificacion[]
-  auditLogs     AuditLog[]
+  auditLogs      AuditLog[]
 
   @@index([email])
 }
 
 model Multa {
-  id                    String     @id @default(cuid())
-  userId                String
-  user                  User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id     String @id @default(cuid())
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  rut                   String
-  patente               String
-  monto                 Int
-  articulo              String?
-  fechaIngreso          DateTime
-  fechaPrescripcion     DateTime
-  estado                String     // "PRESCRITA" or "VIGENTE"
-  diasRestantes         Int?
+  rut               String
+  patente           String
+  monto             Int
+  articulo          String?
+  fechaIngreso      DateTime
+  fechaPrescripcion DateTime
+  estado            String
+  diasRestantes     Int?
 
-  pdfOriginalUrl        String?
-  pdfTextUrl            String?
-  documentoPdfUrl       String?
-  documentoDocxUrl      String?
+  pdfOriginalUrl   String?
+  pdfTextUrl       String?
+  documentoPdfUrl  String?
+  documentoDocxUrl String?
 
-  pagado                Boolean    @default(false)
-  createdAt             DateTime   @default(now())
-  updatedAt             DateTime   @updatedAt
+  pagado    Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-  pago                  Pago?
-  notificaciones        Notificacion[]
+  pago           Pago?
+  notificaciones Notificacion[]
 
   @@index([userId])
   @@index([estado])
@@ -61,38 +60,38 @@ model Multa {
 }
 
 model Pago {
-  id                    String     @id @default(cuid())
-  multaId               String     @unique
-  multa                 Multa      @relation(fields: [multaId], references: [id], onDelete: Cascade)
-  userId                String
-  user                  User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id      String @id @default(cuid())
+  multaId String @unique
+  multa   Multa  @relation(fields: [multaId], references: [id], onDelete: Cascade)
+  userId  String
+  user    User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  monto                 Int        @default(19990)
-  mercadoPagoId         String?    @unique
-  estado                String     // "PENDIENTE", "PAGADO", "FALLIDO"
-  createdAt             DateTime   @default(now())
-  updatedAt             DateTime   @updatedAt
+  monto         Int      @default(19990)
+  mercadoPagoId String?  @unique
+  estado        String
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
 
   @@index([userId])
   @@index([estado])
 }
 
 model Notificacion {
-  id                    String     @id @default(cuid())
-  multaId               String?
-  multa                 Multa?     @relation(fields: [multaId], references: [id], onDelete: SetNull)
-  userId                String
-  user                  User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id      String  @id @default(cuid())
+  multaId String?
+  multa   Multa?  @relation(fields: [multaId], references: [id], onDelete: SetNull)
+  userId  String
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  tipo                  String     // "EMAIL", "WHATSAPP", "SMS"
-  destinatario          String
-  asunto                String?
-  mensaje               String
-  estado                String     // "PENDIENTE", "ENVIADO", "FALLIDO"
-  intentos              Int        @default(0)
-  proximoIntento        DateTime?
-  createdAt             DateTime   @default(now())
-  updatedAt             DateTime   @updatedAt
+  tipo           String
+  destinatario   String
+  asunto         String?
+  mensaje        String
+  estado         String
+  intentos       Int       @default(0)
+  proximoIntento DateTime?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
 
   @@index([userId])
   @@index([estado])
@@ -100,17 +99,17 @@ model Notificacion {
 }
 
 model AuditLog {
-  id                    String     @id @default(cuid())
-  userId                String?
-  user                  User?      @relation(fields: [userId], references: [id], onDelete: SetNull)
+  id     String  @id @default(cuid())
+  userId String?
+  user   User?   @relation(fields: [userId], references: [id], onDelete: SetNull)
 
-  accion                String
-  recurso               String
-  recursoId             String?
-  detalles              String?
-  ipAddress             String?
-  userAgent             String?
-  createdAt             DateTime   @default(now())
+  accion    String
+  recurso   String
+  recursoId String?
+  detalles  String?
+  ipAddress String?
+  userAgent String?
+  createdAt DateTime @default(now())
 
   @@index([userId])
   @@index([createdAt])
@@ -118,18 +117,18 @@ model AuditLog {
 }
 
 model Solicitud {
-  id                    String     @id @default(cuid())
-  nombre                String
-  patente               String
-  email                 String
-  telefono              String
-  pdfUrl                String?
-  aceptaTerminos        Boolean    @default(true)
-  estado                String     @default("PENDIENTE") // "PENDIENTE", "PROCESADA", "ERROR"
-  intento               Int        @default(0)
-  proximoIntento        DateTime?
-  createdAt             DateTime   @default(now())
-  updatedAt             DateTime   @updatedAt
+  id             String    @id @default(cuid())
+  nombre         String
+  patente        String
+  email          String
+  telefono       String
+  pdfUrl         String?
+  aceptaTerminos Boolean   @default(true)
+  estado         String    @default("PENDIENTE")
+  intento        Int       @default(0)
+  proximoIntento DateTime?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
 
   @@index([email])
   @@index([estado])
