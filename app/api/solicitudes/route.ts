@@ -1,17 +1,37 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getPrisma } from '@/lib/db';
 import { sendSolicitudConfirmationEmail, sendInternalNotificationEmail } from '@/lib/email';
+import { uploadToSupabase } from '@/lib/ocr';
 
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json();
+    const formData = await request.formData();
 
-    const { nombre, patente, email, telefono, aceptaTerminos } = body;
+    const nombre = formData.get('nombre') as string;
+    const patente = formData.get('patente') as string;
+    const email = formData.get('email') as string;
+    const telefono = formData.get('telefono') as string;
+    const aceptaTerminos = formData.get('aceptaTerminos') === 'true';
+    const pdf = formData.get('pdf') as File;
 
     // Validaciones básicas
     if (!nombre || !patente || !email || !telefono || !aceptaTerminos) {
       return NextResponse.json(
         { error: 'Todos los campos son obligatorios' },
+        { status: 400 }
+      );
+    }
+
+    if (!pdf) {
+      return NextResponse.json(
+        { error: 'Archivo PDF es obligatorio' },
+        { status: 400 }
+      );
+    }
+
+    if (!pdf.type.includes('pdf')) {
+      return NextResponse.json(
+        { error: 'El archivo debe ser un PDF válido' },
         { status: 400 }
       );
     }
@@ -43,6 +63,12 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Convert File to Buffer for Supabase upload
+    const pdfBuffer = Buffer.from(await pdf.arrayBuffer());
+
+    // Upload PDF to Supabase Storage
+    const pdfKey = await uploadToSupabase(pdfBuffer, pdf.name);
+
     // Guardar en base de datos
     const prisma = await getPrisma();
     const solicitud = await prisma.solicitud.create({
@@ -52,6 +78,7 @@ export async function POST(request: NextRequest) {
         email,
         telefono,
         aceptaTerminos,
+        pdfUrl: pdfKey,
         estado: 'PENDIENTE',
       },
     });
@@ -73,7 +100,6 @@ export async function POST(request: NextRequest) {
     }
 
     // TODO: Enviar notificación por WhatsApp si está configurado
-    // TODO: Procesar PDF con AWS Textract + Claude API en background job
 
     return NextResponse.json(
       {
