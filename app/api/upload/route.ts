@@ -86,9 +86,39 @@ const file = (
 
     const patente = normalizePatente(patenteRaw);
 
+    // Detailed logging for debugging
+    console.log('UPLOAD_VALIDATION', {
+      nombre: { value: nombre, isEmpty: !nombre },
+      patenteRaw: { value: patenteRaw, isEmpty: !patenteRaw },
+      patente: { value: patente, isEmpty: !patente },
+      email: { value: email, isEmpty: !email },
+      telefono: { value: telefono, isEmpty: !telefono },
+      file: { name: file?.name, size: file?.size, isEmpty: !file },
+      aceptaTerminos: { value: aceptaTerminos }
+    });
+
     if (!nombre || !patente || !email || !telefono || !file) {
+      const missingFields = [];
+      if (!nombre) missingFields.push('nombre');
+      if (!patente) missingFields.push('patente');
+      if (!email) missingFields.push('email');
+      if (!telefono) missingFields.push('telefono');
+      if (!file) missingFields.push('file');
+
+      console.log('UPLOAD_MISSING_FIELDS', missingFields);
+
       return NextResponse.json(
-        { error: 'Todos los campos son obligatorios' },
+        {
+          error: 'Todos los campos son obligatorios',
+          missing: missingFields,
+          received: {
+            nombre: nombre || null,
+            patente: patente || null,
+            email: email || null,
+            telefono: telefono || null,
+            file: file?.name || null
+          }
+        },
         { status: 400 },
       );
     }
