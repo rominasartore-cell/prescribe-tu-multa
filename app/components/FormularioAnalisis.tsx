@@ -136,7 +136,7 @@ export default function FormularioAnalisis() {
         formData.append('file', form.archivo);
       }
 
-      const response = await fetch('/api/upload', {
+      const response = await fetch('/api/solicitudes', {
         method: 'POST',
         body: formData,
       });
