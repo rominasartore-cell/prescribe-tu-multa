@@ -126,22 +126,25 @@ export default function FormularioAnalisis() {
     setLoading(true);
 
     try {
-      // Enviar solicitud (sin archivo por ahora)
+      // Enviar solicitud con archivo como multipart/form-data
+      const formData = new FormData();
+      formData.append('nombre', form.nombre);
+      formData.append('patente', form.patente);
+      formData.append('email', form.email);
+      formData.append('telefono', form.telefono);
+      formData.append('aceptaTerminos', form.aceptaTerminos.toString());
+      if (form.archivo) {
+        formData.append('pdf', form.archivo);
+      }
+
       const response = await fetch('/api/solicitudes', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          nombre: form.nombre,
-          patente: form.patente,
-          email: form.email,
-          telefono: form.telefono,
-          aceptaTerminos: form.aceptaTerminos,
-          archivoNombre: form.archivo?.name,
-        }),
+        body: formData,
       });
 
+      const data = await response.json();
+
       if (!response.ok) {
-        const data = await response.json();
         setErrors({ submit: data.error || 'Error al procesar la solicitud' });
         setLoading(false);
         return;

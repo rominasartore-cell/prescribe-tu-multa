@@ -1,11 +1,18 @@
 import { createClient } from '@supabase/supabase-js';
 
-const supabase = createClient(
-  process.env.SUPABASE_URL || '',
-  process.env.SUPABASE_SERVICE_ROLE_KEY || ''
-);
+function getSupabaseClient() {
+  const supabaseUrl = process.env.SUPABASE_URL;
+  const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+  if (!supabaseUrl || !supabaseKey) {
+    throw new Error('Supabase credentials are not configured. Please set SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY.');
+  }
+
+  return createClient(supabaseUrl, supabaseKey);
+}
 
 export async function uploadToSupabase(buffer: Buffer, fileName: string): Promise<string> {
+  const supabase = getSupabaseClient();
   const key = `uploads/${Date.now()}-${fileName}`;
 
   const { error } = await supabase.storage
@@ -26,7 +33,7 @@ export async function extractTextFromPDF(pdfBuffer: Buffer): Promise<string> {
   try {
     // Use require to load pdf-parse at runtime
     // eslint-disable-next-line global-require
-    const pdfParse = require('pdf-parse/lib/pdf.js');
+    const pdfParse = require('pdf-parse');
 
     // Parse PDF to extract text
     const pdfData = await pdfParse(pdfBuffer);
@@ -50,6 +57,7 @@ export async function extractTextFromPDF(pdfBuffer: Buffer): Promise<string> {
 }
 
 export async function getPdfFromSupabase(supabaseKey: string): Promise<Buffer> {
+  const supabase = getSupabaseClient();
   const { data, error } = await supabase.storage
     .from('pdfs')
     .download(supabaseKey);
