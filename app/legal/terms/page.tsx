@@ -44,8 +44,8 @@ export default function TermsPage() {
 
           <h2>4. Datos del Usuario</h2>
           <p>
-            Los archivos PDF cargados se procesan mediante AWS Textract y Claude API, luego se
-            elimina automáticamente. Los datos personales se almacenan según nuestra Política de
+            Los archivos PDF cargados se procesan de forma automatizada con extracción de texto y luego se
+            eliminan según la política de retención. Los datos personales se almacenan según nuestra Política de
             Privacidad.
           </p>
 

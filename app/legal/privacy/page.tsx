@@ -46,11 +46,11 @@ export default function PrivacyPage() {
 
           <h2>3. Almacenamiento y Seguridad</h2>
           <p>
-            <strong>PDFs originales:</strong> Se almacenan encriptados en AWS S3 con restricción de
+            <strong>PDFs originales:</strong> Se almacenan de forma segura en Supabase Storage con restricción de
             acceso. Se eliminan 90 días después si el usuario lo solicita.
           </p>
           <p>
-            <strong>Base de datos:</strong> PostgreSQL en AWS, encriptado en tránsito (TLS 1.2+) y en
+            <strong>Base de datos:</strong> PostgreSQL gestionado en Supabase, encriptado en tránsito (TLS 1.2+) y en
             reposo (AES-256).
           </p>
           <p>
@@ -61,7 +61,7 @@ export default function PrivacyPage() {
           <p>Compartimos datos mínimos con:</p>
           <ul>
             <li>
-              <strong>AWS:</strong> Almacenamiento y procesamiento (Textract, S3)
+              <strong>Supabase:</strong> Almacenamiento de PDFs y base de datos PostgreSQL
             </li>
             <li>
               <strong>Anthropic:</strong> Análisis de texto (Claude API) - sin guardar historiales
