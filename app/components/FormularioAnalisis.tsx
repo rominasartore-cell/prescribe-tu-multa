@@ -126,7 +126,6 @@ export default function FormularioAnalisis() {
     setLoading(true);
 
     try {
-      // Enviar solicitud con archivo como multipart/form-data
       const formData = new FormData();
       formData.append('nombre', form.nombre);
       formData.append('patente', form.patente);
@@ -134,10 +133,10 @@ export default function FormularioAnalisis() {
       formData.append('telefono', form.telefono);
       formData.append('aceptaTerminos', form.aceptaTerminos.toString());
       if (form.archivo) {
-        formData.append('pdf', form.archivo);
+        formData.append('file', form.archivo);
       }
 
-      const response = await fetch('/api/solicitudes', {
+      const response = await fetch('/api/upload', {
         method: 'POST',
         body: formData,
       });
@@ -145,7 +144,10 @@ export default function FormularioAnalisis() {
       const data = await response.json();
 
       if (!response.ok) {
-        setErrors({ submit: data.error || 'Error al procesar la solicitud' });
+        const errorMsg = data.errors
+          ? Object.values(data.errors).join(', ')
+          : data.error || 'Error al procesar la solicitud';
+        setErrors({ submit: errorMsg });
         setLoading(false);
         return;
       }
