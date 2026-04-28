@@ -10,7 +10,7 @@ const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10 MB
 function getFieldValue(formData: FormData, ...aliases: string[]): string | null {
   for (const alias of aliases) {
     const value = formData.get(alias);
-    if (value && typeof value === 'string') return value;
+    if (value !== null && typeof value === 'string') return value;
   }
   return null;
 }
@@ -31,6 +31,18 @@ export async function POST(request: NextRequest) {
     console.log(`${logPrefix} Request received`);
     const formData = await request.formData();
 
+    // Debug: log all form fields
+    const allKeys = Array.from(formData.keys());
+    console.log(`${logPrefix} FormData keys:`, allKeys);
+    for (const key of allKeys) {
+      const val = formData.get(key);
+      if (val instanceof File) {
+        console.log(`${logPrefix}   ${key}: File(${val.name}, ${val.size} bytes)`);
+      } else {
+        console.log(`${logPrefix}   ${key}: "${val}"`);
+      }
+    }
+
     // Extract fields with aliases support
     const nombre = getFieldValue(formData, 'nombre', 'nombreCompleto');
     const patente = getFieldValue(formData, 'patente');
@@ -40,7 +52,14 @@ export async function POST(request: NextRequest) {
     const aceptaTerminos = aceptaTerminosStr === 'true' || aceptaTerminosStr === '1';
     const file = getFileField(formData, 'file', 'pdf', 'certificado', 'archivo');
 
-    console.log(`${logPrefix} Fields parsed - nombre: ${!!nombre}, patente: ${!!patente}, email: ${!!email}, file: ${!!file}`);
+    console.log(`${logPrefix} Fields parsed:`, {
+      nombre: !!nombre,
+      patente: !!patente,
+      email: !!email,
+      telefono: !!telefono,
+      aceptaTerminos,
+      file: !!file
+    });
 
     // Validate required fields
     const errors: { [key: string]: string } = {};
