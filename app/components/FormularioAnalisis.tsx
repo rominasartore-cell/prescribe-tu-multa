@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { Dropzone } from './Dropzone';
+import { isValidPatente, formatPatente } from '@/lib/patente';
 
 interface FormularioState {
   nombre: string;
@@ -30,25 +31,10 @@ export default function FormularioAnalisis() {
   const [loading, setLoading] = useState(false);
   const [enviado, setEnviado] = useState(false);
 
-  // Formatear patente: ABCD12 -> ABCD-12, abcd 12 -> ABCD-12
-  const formatearPatente = (valor: string) => {
-    let patente = valor
-      .toUpperCase()
-      .replace(/\s/g, '')
-      .trim();
-
-    // Separar letras y números
-    const match = patente.match(/^([A-Z]+)(\d+)$/);
-    if (match) {
-      patente = `${match[1]}-${match[2]}`;
-    }
-
-    return patente;
-  };
 
   const handlePatente = (e: React.ChangeEvent<HTMLInputElement>) => {
     const valor = e.target.value;
-    setForm({ ...form, patente: formatearPatente(valor) });
+    setForm({ ...form, patente: formatPatente(valor) });
     if (errors.patente) {
       setErrors({ ...errors, patente: '' });
     }
@@ -88,8 +74,8 @@ export default function FormularioAnalisis() {
 
     if (!form.patente.trim()) {
       nuevosErrores.patente = 'La patente es obligatoria';
-    } else if (!/^[A-Z]{2,3}-?\d{4}$|^[A-Z]{4}-?\d{2}$/.test(form.patente)) {
-      nuevosErrores.patente = 'Formato de patente inválido (ej: ABCD-12)';
+    } else if (!isValidPatente(form.patente)) {
+      nuevosErrores.patente = 'Formato de patente inválido. Ejemplos válidos: ABCD-12 o AB-1234.';
     }
 
     if (!form.email.trim()) {

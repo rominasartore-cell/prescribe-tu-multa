@@ -4,6 +4,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getPrisma } from '@/lib/db';
 import { uploadToSupabase } from '@/lib/ocr';
 import { sendSolicitudConfirmationEmail, sendInternalNotificationEmail } from '@/lib/email';
+import { isValidPatente, formatPatente } from '@/lib/patente';
 
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10 MB
 
@@ -70,11 +71,8 @@ export async function POST(request: NextRequest) {
 
     if (!patente || !patente.trim()) {
       errors.patente = 'La patente es obligatoria';
-    } else {
-      const patenteNormalized = patente.toUpperCase().replace(/\s/g, '');
-      if (!/^[A-Z]{2,3}\d{4}$|^[A-Z]{4}\d{2}$/.test(patenteNormalized)) {
-        errors.patente = 'Formato de patente inválido (ej: ABCD12 o AB1234)';
-      }
+    } else if (!isValidPatente(patente)) {
+      errors.patente = 'Formato de patente inválido. Ejemplos válidos: ABCD-12 o AB-1234.';
     }
 
     if (!email || !email.trim()) {
@@ -107,10 +105,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Convert patente to standard format
-    const patenteNormalized = patente!.toUpperCase().replace(/\s/g, '');
-    const patenteFormatted = /^[A-Z]{4}$/.test(patenteNormalized.substring(0, 4))
-      ? `${patenteNormalized.substring(0, 4)}-${patenteNormalized.substring(4)}`
-      : `${patenteNormalized.substring(0, patenteNormalized.length - 4)}-${patenteNormalized.substring(patenteNormalized.length - 4)}`;
+    const patenteFormatted = formatPatente(patente!);
 
     // Convert file to buffer
     console.log(`${logPrefix} Converting file to buffer (${file!.size} bytes)`);
