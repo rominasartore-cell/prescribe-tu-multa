@@ -34,3 +34,9 @@ export function getDaysRemaining(fechaIngreso: Date): number {
 export function getStatus(fechaIngreso: Date): 'PRESCRITA' | 'VIGENTE' {
   return isPrescribed(fechaIngreso) ? 'PRESCRITA' : 'VIGENTE';
 }
+
+export function getYearsElapsed(fechaIngreso: Date): number {
+  const today = new Date();
+  const ms = today.getTime() - fechaIngreso.getTime();
+  return Math.max(0, Math.floor(ms / (1000 * 60 * 60 * 24 * 365.25)));
+}

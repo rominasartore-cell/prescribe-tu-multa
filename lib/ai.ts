@@ -1,7 +1,11 @@
 import Anthropic from '@anthropic-ai/sdk';
 import { ExtractedData } from './types';
 
-const client = new Anthropic();
+function getClient(): Anthropic {
+  const key = process.env.ANTHROPIC_API_KEY;
+  if (!key) throw new Error('ANTHROPIC_API_KEY is missing');
+  return new Anthropic({ apiKey: key });
+}
 
 const EXTRACTION_PROMPT = `You are an expert at extracting data from Chilean traffic fine certificates (RMNP - Resolución de Multa No Pagada).
 
@@ -19,7 +23,7 @@ Example output:
 {"rut": "12345678-9", "patente": "ABC-1234", "monto": 450000, "articulo": "Artículo 196", "fechaIngreso": "2021-06-15"}`;
 
 export async function extractDataFromText(text: string): Promise<ExtractedData> {
-  const message = await client.messages.create({
+  const message = await getClient().messages.create({
     model: 'claude-3-5-sonnet-20241022',
     max_tokens: 1024,
     messages: [
@@ -60,7 +64,7 @@ export async function extractDataFromText(text: string): Promise<ExtractedData> 
 }
 
 export async function validateWithAI(text: string): Promise<boolean> {
-  const message = await client.messages.create({
+  const message = await getClient().messages.create({
     model: 'claude-3-5-sonnet-20241022',
     max_tokens: 256,
     messages: [

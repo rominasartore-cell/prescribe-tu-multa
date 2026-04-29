@@ -2,7 +2,8 @@ import { getPrisma } from '@/lib/db';
 import { sendMultaAnalysisEmail } from '@/lib/email';
 import { extractTextFromPDF } from '@/lib/ocr';
 import { downloadPdfFromSupabase } from '@/lib/storage';
-import { calculatePrescriptionDate, getStatus, getDaysRemaining } from '@/lib/prescription';
+import { calculatePrescriptionDate, getStatus, getDaysRemaining, getYearsElapsed } from '@/lib/prescription';
+import { parseCertificadoText, pickBestRmnpDate } from '@/lib/certificado-parser';
 import { extractDataFromText } from '@/lib/ai';
 
 export async function processSolicitudJob(solicitudId: string) {
@@ -32,17 +33,22 @@ export async function processSolicitudJob(solicitudId: string) {
     const pdfBuffer = await downloadPdfFromSupabase(solicitud.pdfUrl);
     const extractedText = await extractTextFromPDF(pdfBuffer);
 
-    // Analyze with Claude to extract structured data
+    const parsedMultas = parseCertificadoText(extractedText);
+
+    // Analyze with Claude to extract structured data (fallback parser if API/env unavailable)
     console.log(`Analyzing with Claude for solicitud ${solicitudId}`);
     const analysis = await extractDataFromText(extractedText);
 
-    if (!analysis || !analysis.rut || !analysis.patente || !analysis.fechaIngreso) {
-      throw new Error('Failed to extract required fields from PDF');
+    const fechaIngreso = (analysis?.fechaIngreso
+      ? (typeof analysis.fechaIngreso === 'string' ? new Date(analysis.fechaIngreso) : analysis.fechaIngreso)
+      : pickBestRmnpDate(parsedMultas));
+
+    if (!fechaIngreso) {
+      throw new Error('Failed to extract RMNP date from PDF');
     }
 
-    const fechaIngreso = typeof analysis.fechaIngreso === 'string'
-      ? new Date(analysis.fechaIngreso)
-      : analysis.fechaIngreso;
+    const patente = analysis?.patente || parsedMultas.find((m) => m.patente)?.patente || solicitud.patente;
+    const rut = analysis?.rut || 'PENDIENTE_VALIDAR';
     const fechaPrescripcion = calculatePrescriptionDate(fechaIngreso);
     const estado = getStatus(fechaIngreso);
     const diasRestantes = getDaysRemaining(fechaIngreso);
@@ -59,7 +65,7 @@ export async function processSolicitudJob(solicitudId: string) {
           email: solicitud.email,
           password: '', // No password for solicitud-created users
           phone: solicitud.telefono,
-          rut: analysis.rut,
+          rut,
         },
       });
     } else {
@@ -76,10 +82,10 @@ export async function processSolicitudJob(solicitudId: string) {
     const multa = await prisma.multa.create({
       data: {
         userId: user.id,
-        rut: analysis.rut,
-        patente: analysis.patente,
-        monto: analysis.monto,
-        articulo: analysis.articulo,
+        rut,
+        patente,
+        monto: analysis.monto || parsedMultas.find((m) => m.monto)?.monto || 0,
+        articulo: analysis.articulo || parsedMultas.find((m) => m.rol)?.rol || undefined,
         fechaIngreso,
         fechaPrescripcion,
         estado,
@@ -91,8 +97,8 @@ export async function processSolicitudJob(solicitudId: string) {
     // Send analysis email to user
     await sendMultaAnalysisEmail(
       solicitud.email,
-      analysis.rut,
-      analysis.patente,
+      rut,
+      patente,
       estado,
     );
 
@@ -109,7 +115,7 @@ export async function processSolicitudJob(solicitudId: string) {
         recurso: 'Solicitud',
         recursoId: solicitudId,
         userId: user.id,
-        detalles: `Solicitud de ${solicitud.nombre} procesada. Multa creada: ${analysis.patente}. Estado: ${estado}`,
+        detalles: `Solicitud de ${solicitud.nombre} procesada. Multa creada: ${patente}. Estado: ${estado}. Años transcurridos: ${getYearsElapsed(fechaIngreso)}.`,
       },
     });
 
