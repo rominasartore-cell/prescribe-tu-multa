@@ -7,7 +7,7 @@ export const viewport: Viewport = {
   initialScale: 1,
 };
 
-const SITE_URL = process.env.NEXTAUTH_URL || 'https://prescribe-tu-multa.vercel.app';
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || process.env.NEXTAUTH_URL || 'https://prescribetumulta.cl';
 
 export const metadata: Metadata = {
   title: 'Prescribe Tu Multa | Análisis Legal de Multas de Tránsito en Chile',

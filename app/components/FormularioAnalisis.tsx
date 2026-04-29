@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { Dropzone } from './Dropzone';
+import { formatPatente, isValidPatente } from '@/lib/patente';
 
 interface FormularioState {
   nombre: string;
@@ -30,25 +31,9 @@ export default function FormularioAnalisis() {
   const [loading, setLoading] = useState(false);
   const [enviado, setEnviado] = useState(false);
 
-  // Formatear patente: ABCD12 -> ABCD-12, abcd 12 -> ABCD-12
-  const formatearPatente = (valor: string) => {
-    let patente = valor
-      .toUpperCase()
-      .replace(/\s/g, '')
-      .trim();
-
-    // Separar letras y números
-    const match = patente.match(/^([A-Z]+)(\d+)$/);
-    if (match) {
-      patente = `${match[1]}-${match[2]}`;
-    }
-
-    return patente;
-  };
-
   const handlePatente = (e: React.ChangeEvent<HTMLInputElement>) => {
     const valor = e.target.value;
-    setForm({ ...form, patente: formatearPatente(valor) });
+    setForm({ ...form, patente: formatPatente(valor) });
     if (errors.patente) {
       setErrors({ ...errors, patente: '' });
     }
@@ -88,8 +73,8 @@ export default function FormularioAnalisis() {
 
     if (!form.patente.trim()) {
       nuevosErrores.patente = 'La patente es obligatoria';
-    } else if (!/^[A-Z]{2,3}-?\d{4}$|^[A-Z]{4}-?\d{2}$/.test(form.patente)) {
-      nuevosErrores.patente = 'Formato de patente inválido (ej: ABCD-12)';
+    } else if (!isValidPatente(form.patente)) {
+      nuevosErrores.patente = 'Formato de patente inválido. Ejemplos válidos: ABCD-12 o AB-1234.';
     }
 
     if (!form.email.trim()) {
@@ -106,6 +91,10 @@ export default function FormularioAnalisis() {
 
     if (!form.archivo) {
       nuevosErrores.archivo = 'El certificado PDF es obligatorio';
+    } else if (form.archivo.type !== 'application/pdf') {
+      nuevosErrores.archivo = 'El archivo debe ser un PDF válido';
+    } else if (form.archivo.size > 10 * 1024 * 1024) {
+      nuevosErrores.archivo = 'El archivo no debe superar 10 MB';
     }
 
     if (!form.aceptaTerminos) {
@@ -126,13 +115,22 @@ export default function FormularioAnalisis() {
     setLoading(true);
 
     try {
+      console.log('[FormularioAnalisis] Enviando solicitud con datos:', {
+        nombre: form.nombre,
+        patente: form.patente,
+        email: form.email,
+        telefono: form.telefono,
+        aceptaTerminos: form.aceptaTerminos,
+        archivo: form.archivo?.name,
+      });
+
       const formData = new FormData();
       formData.append('nombre', form.nombre);
       formData.append('patente', form.patente);
       formData.append('email', form.email);
       formData.append('telefono', form.telefono);
       formData.append('aceptaTerminos', 'true');
-
+      
       if (form.archivo) {
         formData.append('pdf', form.archivo);
       }
@@ -142,16 +140,19 @@ export default function FormularioAnalisis() {
         body: formData,
       });
 
+      const data = await response.json();
+      console.log('[FormularioAnalisis] Respuesta del servidor:', data);
+
       if (!response.ok) {
-        const data = await response.json();
-        setErrors({ submit: data.error || 'Error al procesar la solicitud' });
+        const errorMsg = data.error || data.message || 'Error al procesar la solicitud';
+        setErrors({ submit: errorMsg });
         setLoading(false);
         return;
       }
 
       setEnviado(true);
     } catch (error) {
-      console.error('Error:', error);
+      console.error('[FormularioAnalisis] Error:', error);
       setErrors({ submit: 'Error de conexión. Intenta de nuevo.' });
       setLoading(false);
     }
@@ -240,7 +241,7 @@ export default function FormularioAnalisis() {
             }`}
           />
           {errors.patente && <p className="text-red-600 text-sm mt-1">{errors.patente}</p>}
-          <p className="text-xs text-gray-500 mt-1">Se formatea automáticamente</p>
+          <p className="text-xs text-gray-500 mt-1">Se formatea automáticamente. Ejemplos: ABCD-12 o AB-1234</p>
         </div>
 
         {/* Email */}
@@ -313,7 +314,7 @@ export default function FormularioAnalisis() {
             <span>Acepto que </span>
             <strong>el análisis depende de la información que proporciono y del certificado adjunto</strong>
             <span>. He leído los </span>
-            <a href="/legal/terms" target="_blank" className="text-secondary hover:underline">
+            <a href="/legal/terms" target="_blank" rel="noopener noreferrer" className="text-secondary hover:underline">
               términos de servicio
             </a>
             <span>. *</span>
