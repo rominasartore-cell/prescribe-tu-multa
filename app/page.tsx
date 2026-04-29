@@ -234,7 +234,7 @@ export default function Home() {
               },
               {
                 q: '¿Qué datos subes a internet?',
-                a: 'Solo tu PDF. Lo procesamos con AWS Textract + Claude API, luego se elimina. Encriptado en tránsito y en reposo.',
+                a: 'Solo tu PDF. Lo procesamos con extracción de texto + Claude API, luego se elimina. Encriptado en tránsito y en reposo.',
               },
               {
                 q: '¿Garantizan que funcione?',

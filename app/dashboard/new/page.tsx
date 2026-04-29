@@ -191,7 +191,7 @@ export default function NewMultaPage() {
         </div>
 
         <p className="mt-6 text-center text-sm text-gray-600">
-          Tu PDF se procesa con <strong>AWS Textract</strong> + <strong>Claude IA</strong> y luego se
+          Tu PDF se procesa con <strong>extracción de texto</strong> + <strong>Claude IA</strong> y luego se
           elimina de nuestros servidores.
         </p>
       </form>
