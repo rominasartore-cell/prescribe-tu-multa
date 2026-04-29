@@ -8,13 +8,17 @@ const MAX_PDF_SIZE_BYTES = 10 * 1024 * 1024;
 export async function POST(request: NextRequest) {
   try {
     const formData = await request.formData();
+    
+    // Log seguro: solo mostrar claves, no valores
+    console.log('SOLICITUD_FORMDATA_KEYS', Array.from(formData.keys()));
 
-    const nombre = String(formData.get('nombre') || '').trim();
+    // Aceptar variaciones de nombres de campos
+    const nombre = String(formData.get('nombre') || formData.get('nombreCompleto') || '').trim();
     const patente = String(formData.get('patente') || '').trim().toUpperCase();
-    const email = String(formData.get('email') || '').trim();
-    const telefono = String(formData.get('telefono') || '').trim();
+    const email = String(formData.get('email') || formData.get('correo') || '').trim();
+    const telefono = String(formData.get('telefono') || formData.get('whatsapp') || '').trim();
     const aceptaTerminosValue = String(formData.get('aceptaTerminos') || '').trim().toLowerCase();
-    const aceptaTerminos = aceptaTerminosValue === 'true';
+    const aceptaTerminos = aceptaTerminosValue === 'true' || aceptaTerminosValue === 'on' || aceptaTerminosValue === '1';
 
     const pdf = (formData.get('pdf') ||
       formData.get('file') ||
@@ -23,17 +27,17 @@ export async function POST(request: NextRequest) {
 
     const receivedFields = Array.from(formData.keys());
     const missingFields = [
-      !nombre ? 'nombre' : null,
+      !nombre ? 'nombre (o nombreCompleto)' : null,
       !patente ? 'patente' : null,
-      !email ? 'email' : null,
-      !telefono ? 'telefono' : null,
+      !email ? 'email (o correo)' : null,
+      !telefono ? 'telefono (o whatsapp)' : null,
       !aceptaTerminos ? 'aceptaTerminos' : null,
-      !pdf ? 'pdf' : null,
+      !pdf ? 'pdf (o file, certificado, archivo)' : null,
     ].filter(Boolean);
 
     if (missingFields.length > 0) {
       return NextResponse.json(
-        { error: 'Faltan campos obligatorios', missingFields, receivedFields },
+        { error: 'Todos los campos son obligatorios', missingFields, receivedFields },
         { status: 400 },
       );
     }
@@ -93,8 +97,27 @@ export async function POST(request: NextRequest) {
     }
 
     return NextResponse.json({ success: true, id: solicitud.id, pdfUrl }, { status: 201 });
-  } catch (error) {
-    console.error('Error en solicitud:', error);
-    return NextResponse.json({ error: 'Error al procesar la solicitud' }, { status: 500 });
+  } catch (error: unknown) {
+    const err = error as any;
+    
+    // Log seguro: no exponer tokens ni contraseñas
+    console.error('SOLICITUD_ERROR', {
+      name: err?.name,
+      message: err?.message,
+      code: err?.code,
+      meta: err?.meta,
+      stack: err?.stack?.split('\n')[0], // Solo primera línea del stack
+    });
+
+    return NextResponse.json(
+      {
+        error: 'SOLICITUD_ERROR',
+        name: err?.name ?? 'UnknownError',
+        message: err?.message ?? String(error),
+        code: err?.code ?? null,
+        meta: err?.meta ?? null,
+      },
+      { status: 500 }
+    );
   }
 }

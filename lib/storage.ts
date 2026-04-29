@@ -22,16 +22,36 @@ function sanitizeFileName(fileName: string): string {
 }
 
 export async function uploadPdfToSupabase(file: File): Promise<string> {
-  const safeName = sanitizeFileName(file.name);
-  const key = `solicitudes/${Date.now()}-${safeName}`;
+  try {
+    const safeName = sanitizeFileName(file.name);
+    const key = `solicitudes/${Date.now()}-${safeName}`;
 
-  const { error } = await getSupabaseClient().storage.from(BUCKET).upload(key, file, {
-    contentType: 'application/pdf',
-    upsert: false,
-  });
+    const client = getSupabaseClient();
+    const { error } = await client.storage.from(BUCKET).upload(key, file, {
+      contentType: 'application/pdf',
+      upsert: false,
+    });
 
-  if (error) throw new Error(`Supabase Storage upload error: ${error.message}`);
-  return key;
+    if (error) {
+      console.error('STORAGE_UPLOAD_ERROR', {
+        message: error.message,
+        code: error.statusCode,
+        bucket: BUCKET,
+        key: key,
+      });
+      throw new Error(`STORAGE_UPLOAD_ERROR: ${error.message}`);
+    }
+    
+    console.log('STORAGE_UPLOAD_SUCCESS', { key, bucket: BUCKET });
+    return key;
+  } catch (err: any) {
+    console.error('STORAGE_UPLOAD_EXCEPTION', {
+      name: err?.name,
+      message: err?.message,
+      code: err?.code,
+    });
+    throw err;
+  }
 }
 
 export async function uploadPdfBufferToSupabase(buffer: Buffer, fileName: string): Promise<string> {
