@@ -133,7 +133,7 @@ export default function Home() {
               {
                 icon: '🔐',
                 title: 'Datos seguros',
-                desc: 'Encriptados en AWS S3 con máximo nivel de seguridad',
+                desc: 'Encriptados en Supabase Storage con máximo nivel de seguridad',
               },
             ].map((feature, idx) => (
               <div key={idx} className="bg-gray-50 p-8 rounded-lg border border-gray-200">
