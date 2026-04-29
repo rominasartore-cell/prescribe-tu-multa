@@ -7,7 +7,16 @@ export const viewport: Viewport = {
   initialScale: 1,
 };
 
-const SITE_URL = process.env.NEXTAUTH_URL || 'https://prescribe-tu-multa.vercel.app';
+const rawSiteUrl =
+  process.env.NEXT_PUBLIC_SITE_URL ||
+  process.env.NEXTAUTH_URL ||
+  'https://prescribetumulta.cl';
+
+const SITE_URL = rawSiteUrl.replace(/\/$/, '');
+
+const OG_IMAGE_URL =
+  process.env.NEXT_PUBLIC_OG_IMAGE_URL ||
+  `${SITE_URL}/og-image.png`;
 
 export const metadata: Metadata = {
   title: 'Prescribe Tu Multa | Análisis Legal de Multas de Tránsito en Chile',
@@ -31,7 +40,7 @@ export const metadata: Metadata = {
     description: 'Análisis Legal de Multas de Tránsito en Chile',
     images: [
       {
-        url: `${SITE_URL}/og-image.png`,
+        url: OG_IMAGE_URL,
         width: 1200,
         height: 630,
       },
@@ -41,6 +50,7 @@ export const metadata: Metadata = {
     card: 'summary_large_image',
     title: 'Prescribe Tu Multa',
     description: 'Análisis Legal de Multas de Tránsito en Chile',
+    images: [OG_IMAGE_URL],
   },
   robots: {
     index: true,

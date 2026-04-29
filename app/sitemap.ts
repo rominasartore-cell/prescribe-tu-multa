@@ -1,7 +1,8 @@
 import type { MetadataRoute } from 'next';
 
 export default function sitemap(): MetadataRoute.Sitemap {
-  const baseUrl = process.env.NEXTAUTH_URL || 'https://prescribeulmulta.cl';
+  const rawSiteUrl = process.env.NEXT_PUBLIC_SITE_URL || process.env.NEXTAUTH_URL || 'https://prescribetumulta.cl';
+  const baseUrl = rawSiteUrl.replace(/\/$/, '');
 
   return [
     {
