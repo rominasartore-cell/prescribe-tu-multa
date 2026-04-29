@@ -20,7 +20,8 @@ export async function POST(request: NextRequest) {
     console.log('SOLICITUD_FORMDATA_KEYS', Array.from(formData.keys()));
 
     const nombre = String(formData.get('nombre') || formData.get('nombreCompleto') || '').trim();
-    const patente = formatPatente(String(formData.get('patente') || '').trim());
+    const patenteRaw = String(formData.get('patente') || '').trim();
+    const patente = formatPatente(patenteRaw);
     const email = String(formData.get('email') || formData.get('correo') || '').trim();
     const telefono = String(formData.get('telefono') || formData.get('whatsapp') || '').trim();
     const aceptaTerminosRaw = formData.get('aceptaTerminos');
@@ -59,7 +60,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Teléfono chileno inválido' }, { status: 400 });
     }
 
-    if (!isValidPatente(patente)) {
+    if (!isValidPatente(patenteRaw)) {
       return NextResponse.json(
         { error: 'Formato de patente inválido. Ejemplos válidos: ABCD-12 o AB-1234.' },
         { status: 400 },
