@@ -34,24 +34,29 @@ describe('Validator', () => {
   });
 
   describe('validatePatente', () => {
-    it('should validate ABC-1234 format', () => {
-      expect(validatePatente('ABC-1234')).toBe(true);
+    it('should validate RHHP-33 modern format', () => {
+      expect(validatePatente('RHHP-33')).toBe(true);
     });
 
-    it('should validate ABC1234 format (no hyphen)', () => {
-      expect(validatePatente('ABC1234')).toBe(true);
+    it('should validate RHHP33 modern format without hyphen', () => {
+      expect(validatePatente('RHHP33')).toBe(true);
     });
 
-    it('should validate ABCD-12 format', () => {
-      expect(validatePatente('ABCD-12')).toBe(true);
+    it('should validate AB-1234 old format', () => {
+      expect(validatePatente('AB-1234')).toBe(true);
+    });
+
+    it('should validate AB1234 old format without hyphen', () => {
+      expect(validatePatente('AB1234')).toBe(true);
     });
 
     it('should reject invalid format', () => {
-      expect(validatePatente('1234-ABC')).toBe(false);
+      expect(validatePatente('ABC123')).toBe(false);
+      expect(validatePatente('123456')).toBe(false);
     });
 
     it('should be case insensitive', () => {
-      expect(validatePatente('abc-1234')).toBe(true);
+      expect(validatePatente('rhhp33')).toBe(true);
     });
   });
 

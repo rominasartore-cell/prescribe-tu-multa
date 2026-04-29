@@ -1,4 +1,6 @@
 import { ValidationError, ExtractedData } from './types';
+import { isValidPatente, formatPatente } from './patente';
+
 
 function validateCheckDigit(rut: string): boolean {
   const actualDigit = rut[rut.length - 1].toUpperCase();
@@ -28,9 +30,7 @@ export function validateRUT(rut: string): boolean {
 
 export function validatePatente(patente: string): boolean {
   if (!patente || typeof patente !== 'string') return false;
-  const clean = patente.replace(/\s/g, '').toUpperCase();
-  // Chilean formats: ABC-1234, ABCD-12, ABC1234
-  return /^[A-Z]{3,4}-?\d{2,4}$/.test(clean);
+  return isValidPatente(patente);
 }
 
 export function validateFecha(fecha: string | Date): boolean {
@@ -87,7 +87,7 @@ export function validateExtraction(data: ExtractedData): ValidationError[] {
 export function normalizeExtraction(data: ExtractedData): ExtractedData {
   return {
     rut: data.rut?.toUpperCase().replace(/[\.\-\s]/g, '').trim(),
-    patente: data.patente?.toUpperCase().replace(/\s/g, '').trim(),
+    patente: data.patente ? formatPatente(data.patente) : undefined,
     monto: typeof data.monto === 'string' ? parseInt(data.monto, 10) : data.monto,
     articulo: data.articulo?.trim(),
     fechaIngreso: data.fechaIngreso,

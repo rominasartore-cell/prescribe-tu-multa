@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getPrisma } from '@/lib/db';
 import { sendSolicitudConfirmationEmail, sendInternalNotificationEmail } from '@/lib/email';
 import { uploadPdfToSupabase } from '@/lib/storage';
+import { formatPatente, isValidPatente } from '@/lib/patente';
 
 const MAX_PDF_SIZE_BYTES = 10 * 1024 * 1024;
 
@@ -19,7 +20,7 @@ export async function POST(request: NextRequest) {
     console.log('SOLICITUD_FORMDATA_KEYS', Array.from(formData.keys()));
 
     const nombre = String(formData.get('nombre') || formData.get('nombreCompleto') || '').trim();
-    const patente = String(formData.get('patente') || '').trim().toUpperCase();
+    const patente = formatPatente(String(formData.get('patente') || '').trim());
     const email = String(formData.get('email') || formData.get('correo') || '').trim();
     const telefono = String(formData.get('telefono') || formData.get('whatsapp') || '').trim();
     const aceptaTerminosRaw = formData.get('aceptaTerminos');
@@ -58,9 +59,11 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Teléfono chileno inválido' }, { status: 400 });
     }
 
-    const patenteRegex = /^[A-Z]{2,3}-?\d{4}$|^[A-Z]{4}-?\d{2}$/;
-    if (!patenteRegex.test(patente)) {
-      return NextResponse.json({ error: 'Patente inválida' }, { status: 400 });
+    if (!isValidPatente(patente)) {
+      return NextResponse.json(
+        { error: 'Formato de patente inválido. Ejemplos válidos: ABCD-12 o AB-1234.' },
+        { status: 400 },
+      );
     }
 
     if (!(pdf instanceof File)) {
