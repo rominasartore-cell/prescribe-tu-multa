@@ -16,13 +16,15 @@ export async function POST(request: NextRequest) {
     }
 
     const formData = await request.formData();
+    console.log('SOLICITUD_FORMDATA_KEYS', Array.from(formData.keys()));
 
-    const nombre = String(formData.get('nombre') || '').trim();
+    const nombre = String(formData.get('nombre') || formData.get('nombreCompleto') || '').trim();
     const patente = String(formData.get('patente') || '').trim().toUpperCase();
-    const email = String(formData.get('email') || '').trim();
-    const telefono = String(formData.get('telefono') || '').trim();
-    const aceptaTerminosValue = String(formData.get('aceptaTerminos') || '').trim().toLowerCase();
-    const aceptaTerminos = aceptaTerminosValue === 'true';
+    const email = String(formData.get('email') || formData.get('correo') || '').trim();
+    const telefono = String(formData.get('telefono') || formData.get('whatsapp') || '').trim();
+    const aceptaTerminosRaw = formData.get('aceptaTerminos');
+    const aceptaTerminosValue = String(aceptaTerminosRaw ?? '').trim().toLowerCase();
+    const aceptaTerminos = ['true', 'on', '1'].includes(aceptaTerminosValue);
 
     const pdf = (formData.get('pdf') ||
       formData.get('file') ||
@@ -41,7 +43,7 @@ export async function POST(request: NextRequest) {
 
     if (missingFields.length > 0) {
       return NextResponse.json(
-        { error: 'Faltan campos obligatorios', missingFields, receivedFields },
+        { error: 'Todos los campos son obligatorios', missingFields, receivedFields },
         { status: 400 },
       );
     }
@@ -76,10 +78,17 @@ export async function POST(request: NextRequest) {
     let pdfUrl = '';
     try {
       pdfUrl = await uploadPdfToSupabase(pdf);
-    } catch (storageError) {
-      const details = storageError instanceof Error ? storageError.message : 'Unknown storage error';
+    } catch (uploadError: unknown) {
+      const err = uploadError as any;
       return NextResponse.json(
-        { error: 'Error al subir el archivo PDF', details },
+        {
+          error: 'STORAGE_UPLOAD_ERROR',
+          message: err?.message ?? 'Unknown storage upload error',
+          details: {
+            name: err?.name ?? null,
+            code: err?.code ?? null,
+          },
+        },
         { status: 500 },
       );
     }
@@ -119,11 +128,25 @@ export async function POST(request: NextRequest) {
       },
       { status: 201 },
     );
-  } catch (error) {
-    console.error('Error en solicitud:', error);
-    const details = error instanceof Error ? error.message : 'Unknown error';
+  } catch (error: unknown) {
+    const err = error as any;
+
+    console.error('SOLICITUD_ERROR', {
+      name: err?.name,
+      message: err?.message,
+      code: err?.code,
+      meta: err?.meta,
+      stack: err?.stack,
+    });
+
     return NextResponse.json(
-      { error: 'Error al procesar la solicitud', details },
+      {
+        error: 'SOLICITUD_ERROR',
+        name: err?.name ?? 'UnknownError',
+        message: err?.message ?? String(error),
+        code: err?.code ?? null,
+        meta: err?.meta ?? null,
+      },
       { status: 500 },
     );
   }
