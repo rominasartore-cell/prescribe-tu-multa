@@ -2,6 +2,7 @@
 
 import { useCallback } from 'react';
 import { useDropzone } from 'react-dropzone';
+import { Upload, CheckCircle } from 'lucide-react';
 
 interface DropzoneProps {
   onFileSelect: (file: File) => void;
@@ -32,27 +33,37 @@ export function Dropzone({ onFileSelect, archivo }: DropzoneProps) {
   return (
     <div
       {...getRootProps()}
-      className={`border-2 border-dashed rounded-lg p-8 text-center cursor-pointer transition-colors ${
-        isDragActive ? 'border-secondary bg-secondary bg-opacity-5' : 'border-gray-300 hover:border-secondary'
+      className={`relative border-2 border-dashed rounded-2xl p-8 text-center cursor-pointer transition-all ${
+        isDragActive
+          ? 'border-primary bg-primary bg-opacity-5 shadow-md'
+          : 'border-gray-200 hover:border-primary hover:bg-primary hover:bg-opacity-2'
       }`}
     >
       <input {...getInputProps()} />
 
       {archivo ? (
-        <div className="text-center">
-          <div className="text-3xl mb-2">📄</div>
-          <p className="font-semibold text-gray-900 mb-1">{archivo.name}</p>
-          <p className="text-sm text-gray-600 mb-3">
+        <div className="text-center slide-in-up">
+          <div className="w-12 h-12 bg-success bg-opacity-10 rounded-full flex items-center justify-center mx-auto mb-4">
+            <CheckCircle className="w-6 h-6 text-success" />
+          </div>
+          <p className="font-semibold text-text-primary mb-2">{archivo.name}</p>
+          <p className="text-sm text-text-secondary mb-3">
             {(archivo.size / 1024 / 1024).toFixed(2)} MB
           </p>
-          <p className="text-xs text-gray-500">Haz clic para cambiar el archivo</p>
+          <p className="text-xs text-text-muted hover:text-primary transition-colors">
+            Haz clic para cambiar el archivo
+          </p>
         </div>
       ) : (
         <div className="text-center">
-          <div className="text-3xl mb-2">📤</div>
-          <p className="font-semibold text-gray-900 mb-1">Arrastra tu PDF aquí</p>
-          <p className="text-sm text-gray-600">o haz clic para seleccionar un archivo</p>
-          <p className="text-xs text-gray-500 mt-3">Solo se aceptan archivos PDF</p>
+          <div className="w-12 h-12 bg-primary bg-opacity-10 rounded-full flex items-center justify-center mx-auto mb-4">
+            <Upload className="w-6 h-6 text-primary" />
+          </div>
+          <p className="font-semibold text-text-primary mb-2 text-lg">Arrastra tu PDF aquí</p>
+          <p className="text-sm text-text-secondary mb-4">o haz clic para seleccionar un archivo</p>
+          <p className="text-xs text-text-muted">
+            Solo se aceptan archivos PDF • Máximo 10 MB
+          </p>
         </div>
       )}
     </div>

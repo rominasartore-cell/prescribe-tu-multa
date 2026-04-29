@@ -1,6 +1,14 @@
 ﻿import type { Metadata, Viewport } from 'next';
+import { Montserrat } from 'next/font/google';
 import '@/styles/globals.css';
 import { Providers } from './providers';
+
+const montserrat = Montserrat({
+  subsets: ['latin'],
+  weight: ['400', '500', '600', '700', '800'],
+  variable: '--font-montserrat',
+  display: 'swap',
+});
 
 export const viewport: Viewport = {
   width: 'device-width',
@@ -67,8 +75,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="es">
-      <body>
+    <html lang="es" className={montserrat.variable}>
+      <body className="font-montserrat">
         <Providers>
           <div className="min-h-screen flex flex-col bg-white">
             {children}

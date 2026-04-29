@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { Dropzone } from './Dropzone';
 import { isValidPatente, formatPatente } from '@/lib/patente';
+import { AlertCircle, CheckCircle, Loader } from 'lucide-react';
 
 interface FormularioState {
   nombre: string;
@@ -30,7 +31,6 @@ export default function FormularioAnalisis() {
   const [errors, setErrors] = useState<FormErrors>({});
   const [loading, setLoading] = useState(false);
   const [enviado, setEnviado] = useState(false);
-
 
   const handlePatente = (e: React.ChangeEvent<HTMLInputElement>) => {
     const valor = e.target.value;
@@ -170,20 +170,20 @@ export default function FormularioAnalisis() {
 
   if (enviado) {
     return (
-      <div className="bg-white rounded-lg shadow-xl p-8 max-w-2xl mx-auto text-center">
-        <div className="text-5xl mb-4">✓</div>
-        <h2 className="text-3xl font-bold text-green-600 mb-4">
+      <div className="card text-center max-w-2xl mx-auto slide-in-up">
+        <div className="w-16 h-16 bg-success bg-opacity-10 rounded-full flex items-center justify-center mx-auto mb-6">
+          <CheckCircle className="w-8 h-8 text-success" />
+        </div>
+        <h2 className="text-3xl font-bold text-text-primary mb-4">
           ¡Solicitud recibida correctamente!
         </h2>
-        <p className="text-gray-600 mb-6">
-          Hemos recibido tu solicitud correctamente. Revisaremos el certificado ingresado y te
-          contactaremos por WhatsApp o correo electrónico con el resultado del análisis
-          preliminar.
+        <p className="text-text-secondary text-lg mb-8 leading-relaxed">
+          Hemos recibido tu solicitud correctamente. Revisaremos tu certificado y te contactaremos con el resultado del análisis.
         </p>
-        <div className="bg-blue-50 border border-blue-200 p-4 rounded-lg text-sm text-blue-800">
-          <p>
-            <strong>Contacto:</strong> {form.email} / +56 {form.telefono}
-          </p>
+        <div className="bg-primary bg-opacity-5 border border-primary border-opacity-20 p-6 rounded-xl text-sm text-text-primary mb-8">
+          <p className="font-semibold mb-2">Datos de contacto registrados:</p>
+          <p className="text-text-secondary">{form.email}</p>
+          <p className="text-text-secondary">+56 {form.telefono}</p>
         </div>
         <button
           onClick={() => {
@@ -197,7 +197,7 @@ export default function FormularioAnalisis() {
               archivo: null,
             });
           }}
-          className="mt-6 bg-secondary text-white px-6 py-2 rounded-lg font-semibold hover:bg-opacity-90"
+          className="btn-primary"
         >
           Enviar otra solicitud
         </button>
@@ -206,93 +206,113 @@ export default function FormularioAnalisis() {
   }
 
   return (
-    <div className="bg-white rounded-lg shadow-xl p-8 max-w-2xl mx-auto">
-      <h2 className="text-3xl font-bold mb-2 text-gray-900">Analizar tu multa</h2>
-      <p className="text-gray-600 mb-8">
+    <div className="card max-w-2xl mx-auto">
+      <h2 className="text-3xl font-bold text-text-primary mb-2">Enviar certificado para revisión</h2>
+      <p className="text-text-secondary text-lg mb-8">
         Completa el formulario y sube tu certificado RMNP. Te contactaremos en 24 horas.
       </p>
 
       {errors.submit && (
-        <div className="bg-red-50 border border-red-200 text-red-700 p-4 rounded-lg mb-6">
-          {errors.submit}
+        <div className="flex gap-3 bg-danger bg-opacity-5 border border-danger border-opacity-20 text-danger p-4 rounded-lg mb-6">
+          <AlertCircle className="w-5 h-5 flex-shrink-0 mt-0.5" />
+          <div>
+            <p className="font-semibold">Error al procesar</p>
+            <p className="text-sm mt-1">{errors.submit}</p>
+          </div>
         </div>
       )}
 
       <form onSubmit={handleSubmit} className="space-y-6">
         {/* Nombre */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Nombre completo *
+          <label htmlFor="nombre" className="label-field">
+            Nombre completo <span className="text-danger">*</span>
           </label>
           <input
+            id="nombre"
             type="text"
             value={form.nombre}
             onChange={handleNombre}
             placeholder="Ej: Juan Pérez"
-            className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-secondary ${
-              errors.nombre ? 'border-red-500' : 'border-gray-300'
-            }`}
+            className={`input-field ${errors.nombre ? 'border-danger' : ''}`}
           />
-          {errors.nombre && <p className="text-red-600 text-sm mt-1">{errors.nombre}</p>}
+          {errors.nombre && (
+            <p className="error-message">
+              <AlertCircle className="w-4 h-4" />
+              {errors.nombre}
+            </p>
+          )}
         </div>
 
         {/* Patente */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Patente del vehículo *
+          <label htmlFor="patente" className="label-field">
+            Patente del vehículo <span className="text-danger">*</span>
           </label>
           <input
+            id="patente"
             type="text"
             value={form.patente}
             onChange={handlePatente}
             placeholder="Ej: ABCD-12 o AB-1234"
-            className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-secondary uppercase ${
-              errors.patente ? 'border-red-500' : 'border-gray-300'
-            }`}
+            className={`input-field uppercase ${errors.patente ? 'border-danger' : ''}`}
           />
-          {errors.patente && <p className="text-red-600 text-sm mt-1">{errors.patente}</p>}
-          <p className="text-xs text-gray-500 mt-1">Se formatea automáticamente</p>
+          <p className="text-xs text-text-muted mt-2">Se formatea automáticamente. Ejemplos: ABCD-12 o AB-1234</p>
+          {errors.patente && (
+            <p className="error-message">
+              <AlertCircle className="w-4 h-4" />
+              {errors.patente}
+            </p>
+          )}
         </div>
 
         {/* Email */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Correo electrónico *
+          <label htmlFor="email" className="label-field">
+            Correo electrónico <span className="text-danger">*</span>
           </label>
           <input
+            id="email"
             type="email"
             value={form.email}
             onChange={handleEmail}
             placeholder="tu@email.com"
-            className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-secondary ${
-              errors.email ? 'border-red-500' : 'border-gray-300'
-            }`}
+            className={`input-field ${errors.email ? 'border-danger' : ''}`}
           />
-          {errors.email && <p className="text-red-600 text-sm mt-1">{errors.email}</p>}
+          {errors.email && (
+            <p className="error-message">
+              <AlertCircle className="w-4 h-4" />
+              {errors.email}
+            </p>
+          )}
         </div>
 
         {/* Teléfono */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Teléfono / WhatsApp *
+          <label htmlFor="telefono" className="label-field">
+            Teléfono / WhatsApp <span className="text-danger">*</span>
           </label>
           <input
+            id="telefono"
             type="tel"
             value={form.telefono}
             onChange={handleTelefono}
-            placeholder="+56 9 XXXX XXXX"
-            className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-secondary ${
-              errors.telefono ? 'border-red-500' : 'border-gray-300'
-            }`}
+            placeholder="9 XXXX XXXX"
+            className={`input-field ${errors.telefono ? 'border-danger' : ''}`}
           />
-          {errors.telefono && <p className="text-red-600 text-sm mt-1">{errors.telefono}</p>}
-          <p className="text-xs text-gray-500 mt-1">Formato: 9 XXXX XXXX o +56 9 XXXX XXXX</p>
+          <p className="text-xs text-text-muted mt-2">Formato: 9 XXXX XXXX</p>
+          {errors.telefono && (
+            <p className="error-message">
+              <AlertCircle className="w-4 h-4" />
+              {errors.telefono}
+            </p>
+          )}
         </div>
 
         {/* Archivo */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Certificado de multa (PDF) *
+          <label htmlFor="archivo" className="label-field">
+            Certificado de multa (PDF) <span className="text-danger">*</span>
           </label>
           <Dropzone
             onFileSelect={(file) => {
@@ -303,48 +323,63 @@ export default function FormularioAnalisis() {
             }}
             archivo={form.archivo}
           />
-          {errors.archivo && <p className="text-red-600 text-sm mt-1">{errors.archivo}</p>}
+          {errors.archivo && (
+            <p className="error-message">
+              <AlertCircle className="w-4 h-4" />
+              {errors.archivo}
+            </p>
+          )}
         </div>
 
         {/* Términos */}
-        <div className="flex items-start gap-3">
-          <input
-            type="checkbox"
-            id="aceptaTerminos"
-            checked={form.aceptaTerminos}
-            onChange={(e) => {
-              setForm({ ...form, aceptaTerminos: e.target.checked });
-              if (errors.aceptaTerminos) {
-                setErrors({ ...errors, aceptaTerminos: '' });
-              }
-            }}
-            className="mt-1 w-4 h-4 cursor-pointer"
-          />
-          <label htmlFor="aceptaTerminos" className="text-sm text-gray-600">
-            <span>Acepto que </span>
-            <strong>el análisis depende de la información que proporciono y del certificado adjunto</strong>
-            <span>. He leído los </span>
-            <a href="/legal/terms" target="_blank" className="text-secondary hover:underline">
-              términos de servicio
-            </a>
-            <span>. *</span>
-          </label>
+        <div className="bg-primary bg-opacity-5 border border-primary border-opacity-20 p-4 rounded-lg">
+          <div className="flex items-start gap-3">
+            <input
+              type="checkbox"
+              id="aceptaTerminos"
+              checked={form.aceptaTerminos}
+              onChange={(e) => {
+                setForm({ ...form, aceptaTerminos: e.target.checked });
+                if (errors.aceptaTerminos) {
+                  setErrors({ ...errors, aceptaTerminos: '' });
+                }
+              }}
+              className="mt-1 w-4 h-4 cursor-pointer accent-primary"
+            />
+            <label htmlFor="aceptaTerminos" className="text-sm text-text-primary leading-relaxed">
+              Acepto que <strong>el análisis depende de la información que proporciono y del certificado adjunto</strong>. He leído los{' '}
+              <a href="/legal/terms" target="_blank" rel="noopener noreferrer" className="text-primary font-semibold hover:underline">
+                términos de servicio
+              </a>
+              . <span className="text-danger">*</span>
+            </label>
+          </div>
+          {errors.aceptaTerminos && (
+            <p className="error-message mt-3">
+              <AlertCircle className="w-4 h-4" />
+              {errors.aceptaTerminos}
+            </p>
+          )}
         </div>
-        {errors.aceptaTerminos && (
-          <p className="text-red-600 text-sm">{errors.aceptaTerminos}</p>
-        )}
 
         {/* Botón */}
         <button
           type="submit"
           disabled={loading}
-          className="w-full bg-secondary text-white py-3 rounded-lg font-semibold hover:bg-opacity-90 disabled:opacity-50 transition-opacity"
+          className="w-full btn-primary flex items-center justify-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed"
         >
-          {loading ? 'Procesando...' : 'Enviar solicitud'}
+          {loading ? (
+            <>
+              <Loader className="w-5 h-5 animate-spin" />
+              Enviando solicitud...
+            </>
+          ) : (
+            'Enviar certificado para revisión'
+          )}
         </button>
 
-        <p className="text-xs text-gray-500 text-center">
-          Los campos marcados con * son obligatorios
+        <p className="text-xs text-text-muted text-center">
+          Los campos marcados con <span className="text-danger">*</span> son obligatorios
         </p>
       </form>
     </div>
